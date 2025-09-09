@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Enterprise Canteen Management System">
+    <title>{% block title %}Oapi's Canteen  System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link href="{% block custom_css %}{% endblock %}" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            border-right: 1px solid #e2e8f0;
+            min-height: calc(100vh - 76px);
+        }
+
+        .sidebar .nav-link {
+            color: var(--dark-color);
+            border-radius: 8px;
+            margin: 2px 0;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .notification-badge {
+            position: relative;
+            top: -2px;
+            left: -5px;
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            border-radius: 12px;
+        }
+
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--light-color);
+            margin-top: auto;
+        }
+
+        /* Custom animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Notification styles */
+        .notification-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        }
+
+        .notification {
+            background: white;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                width: 250px;
+                height: 100vh;
+                transition: left 0.3s ease;
+                z-index: 1000;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <!-- Mobile Menu Toggle -->
+            <button class="navbar-toggler d-md-none" type="button" id="sidebarToggle">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Brand -->
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <i class="bi bi-shop"></i>
+               OAPI's Canteen 
+            </a>
+            
+            <!-- Right Side Navigation -->
+            <div class="navbar-nav ms-auto d-flex flex-row">
+                <!-- Notifications -->
+                <div class="nav-item dropdown me-3">
+                    <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="badge bg-danger rounded-pill notification-badge" id="notificationCount">3</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Notifications</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <div class="dropdown-item-text">
+                                <small class="text-muted">Your order #1234 is ready for pickup</small>
+                                <br><small class="text-primary">2 minutes ago</small>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center" href="{% url 'notifications' %}">View All Notifications</a></li>
+                    </ul>
+                </div>
+                
+                <!-- User Profile -->
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-5"></i>
+                        <span class="ms-1">{% block user_name %}User{% endblock %}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'settings' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar" id="sidebar">
+                <nav class="nav flex-column py-3">
+                    {% block sidebar %}
+                    <!-- Default sidebar items -->
+                    <a class="nav-link active" href="{% url 'dashboard' %}">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </a>
+                    {% endblock %}
+                </nav>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 main-content">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb">
+                        {% block breadcrumb %}
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                        {% endblock %}
+                    </ol>
+                </nav>
+                
+                <!-- Alert Messages -->
+                <div id="alertContainer">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <!-- Page Title -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <div class="btn-toolbar">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </div>
+                
+                <!-- Main Content Area -->
+                <div class="fade-in">
+                    {% block content %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Welcome to the Oapi's Canteen</h5>
+                                    <p class="card-text">Select an option from the sidebar to get started.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5 py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <span class="text-muted">&copy; 2024 Enterprise Canteen Oapi System</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="text-muted">Version 1.0 | Built with Django & Bootstrap</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Container for Real-time notifications -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Bootstrap 5 JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Mobile sidebar toggle
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        });
+
+        // Real-time notification system
+        class NotificationManager {
+            constructor() {
+                this.container = document.getElementById('notificationContainer');
+                this.counter = document.getElementById('notificationCount');
+                this.count = parseInt(this.counter.textContent) || 0;
+            }
+
+            show(message, type = 'info', duration = 5000) {
+                const notification = document.createElement('div');
+                notification.className = `notification alert alert-${type} alert-dismissible`;
+                notification.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                this.container.appendChild(notification);
+                this.updateCount(1);
+                
+                // Auto-remove notification
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                        this.updateCount(-1);
+                    }
+                }, duration);
+            }
+
+            updateCount(change) {
+                this.count = Math.max(0, this.count + change);
+                this.counter.textContent = this.count;
+                this.counter.style.display = this.count > 0 ? 'inline' : 'none';
+            }
+        }
+
+        // Initialize notification manager
+        window.notificationManager = new NotificationManager();
+
+        // AJAX Setup for Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // CSRF Token setup for AJAX
+        const csrftoken = getCookie('csrftoken');
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+
+        // Smooth scrolling for anchor links
+        $('a[href^="#"]').on('click', function(event) {
+            const target = $(this.getAttribute('href'));
+            if (target.length) {
+                event.preventDefault();
+                $('html, body').animate({
+                    scrollTop: target.offset().top - 100
+                }, 1000);
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,658 @@
+{% extends 'base/base.html' %}
+
+{% block title %}System Dashboard - System Admin{% endblock %}
+
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block sidebar %}
+<a class="nav-link active" href="{% url 'system_admin:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link" href="{% url 'system_admin:user_management' %}">
+    <i class="bi bi-people me-2"></i>User Management
+</a>
+<a class="nav-link" href="{% url 'system_admin:system_config' %}">
+    <i class="bi bi-gear me-2"></i>System Configuration
+</a>
+<a class="nav-link" href="{% url 'system_admin:analytics' %}">
+    <i class="bi bi-graph-up me-2"></i>Analytics
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">System Dashboard</li>
+{% endblock %}
+
+{% block page_title %}System Overview{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-success me-2" onclick="generateSystemReport()">
+    <i class="bi bi-file-earmark-text me-2"></i>System Report
+</button>
+<button class="btn btn-outline-primary me-2" onclick="backupSystem()">
+    <i class="bi bi-cloud-download me-2"></i>Backup
+</button>
+<button class="btn btn-outline-secondary" onclick="refreshDashboard()">
+    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- System Health Status -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>System Health Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-server fs-1 text-success mb-2"></i>
+                            <h6>Database</h6>
+                            <span class="badge bg-success">Operational</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-wifi fs-1 text-success mb-2"></i>
+                            <h6>API Services</h6>
+                            <span class="badge bg-success">Online</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-credit-card fs-1 text-warning mb-2"></i>
+                            <h6>Payment Gateway</h6>
+                            <span class="badge bg-warning">Limited</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-bell fs-1 text-success mb-2"></i>
+                            <h6>Notifications</h6>
+                            <span class="badge bg-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ total_users }}</h4>
+                        <p class="card-text">Total Users</p>
+                        <small class="opacity-75">
+                            {% if users_growth >= 0 %}
+                            <i class="bi bi-arrow-up"></i> +{{ users_growth }}%
+                            {% else %}
+                            <i class="bi bi-arrow-down"></i> {{ users_growth }}%
+                            {% endif %} this month
+                        </small>
+                    </div>
+                    <i class="bi bi-people fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ active_sessions }}</h4>
+                        <p class="card-text">Active Sessions</p>
+                        <small class="opacity-75">
+                            <i class="bi bi-clock"></i> Last 24 hours
+                        </small>
+                    </div>
+                    <i class="bi bi-person-check fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ total_orders_today }}</h4>
+                        <p class="card-text">Orders Today</p>
+                        <small class="opacity-75">
+                            {{ total_revenue_today|floatformat:0 }} XAF revenue
+                        </small>
+                    </div>
+                    <i class="bi bi-bag fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ system_uptime }}%</h4>
+                        <p class="card-text">System Uptime</p>
+                        <small class="opacity-75">
+                            <i class="bi bi-clock-history"></i> Last 30 days
+                        </small>
+                    </div>
+                    <i class="bi bi-speedometer fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Activity & System Performance -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-activity me-2"></i>User Activity Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="userActivityChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart me-2"></i>User Role Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="userRoleChart" height="300"></canvas>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Employees</span>
+                        <strong>{{ employee_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Canteen Admins</span>
+                        <strong>{{ canteen_admin_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>System Admins</span>
+                        <strong>{{ system_admin_count }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Alerts -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Recent System Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="activity-timeline">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item d-flex mb-3">
+                        <div class="activity-icon me-3">
+                            {% if activity.type == 'user_created' %}
+                            <i class="bi bi-person-plus text-success"></i>
+                            {% elif activity.type == 'user_login' %}
+                            <i class="bi bi-box-arrow-in-right text-info"></i>
+                            {% elif activity.type == 'order_placed' %}
+                            <i class="bi bi-bag-plus text-primary"></i>
+                            {% elif activity.type == 'payment_completed' %}
+                            <i class="bi bi-credit-card text-success"></i>
+                            {% elif activity.type == 'system_error' %}
+                            <i class="bi bi-exclamation-triangle text-danger"></i>
+                            {% endif %}
+                        </div>
+                        <div class="activity-content flex-grow-1">
+                            <div class="activity-description">{{ activity.description }}</div>
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>{{ activity.created_at|timesince }} ago
+                            </small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                        No recent activity
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>System Alerts
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alerts-list">
+                    {% for alert in system_alerts %}
+                    <div class="alert alert-{{ alert.severity }} alert-dismissible fade show" role="alert">
+                        <strong>{{ alert.title }}</strong><br>
+                        {{ alert.message }}
+                        <small class="d-block mt-1 text-muted">{{ alert.created_at|date:"M d, H:i" }}</small>
+                        <button type="button" class="btn-close" onclick="dismissAlert('{{ alert.id }}')"></button>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-shield-check fs-3 text-success d-block mb-2"></i>
+                        No active alerts
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Resources & Performance -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cpu me-2"></i>System Resources
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6>CPU Usage</h6>
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ cpu_usage }}%;">
+                                    {{ cpu_usage }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ cpu_cores }} cores</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6>Memory Usage</h6>
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ memory_usage }}%;">
+                                    {{ memory_usage }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ memory_total }}GB total</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6>Storage Usage</h6>
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ storage_usage }}%;">
+                                    {{ storage_usage }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ storage_total }}GB total</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6>Database Size</h6>
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ db_usage }}%;">
+                                    {{ db_usage }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ db_size }}MB used</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="createUser()">
+                            <i class="bi bi-person-plus d-block fs-3 mb-2"></i>
+                            <div>Create User</div>
+                            <small class="text-muted">Add new system user</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-info w-100 mb-2" onclick="viewLogs()">
+                            <i class="bi bi-file-text d-block fs-3 mb-2"></i>
+                            <div>View Logs</div>
+                            <small class="text-muted">System error logs</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-warning w-100 mb-2" onclick="systemMaintenance()">
+                            <i class="bi bi-tools d-block fs-3 mb-2"></i>
+                            <div>Maintenance</div>
+                            <small class="text-muted">System maintenance</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-success w-100 mb-2" onclick="exportData()">
+                            <i class="bi bi-download d-block fs-3 mb-2"></i>
+                            <div>Export Data</div>
+                            <small class="text-muted">Download reports</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Maintenance Modal -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">System Maintenance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    System maintenance will temporarily disable access for all users.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Maintenance Type</label>
+                    <select class="form-select" id="maintenanceType">
+                        <option value="database">Database Optimization</option>
+                        <option value="cleanup">System Cleanup</option>
+                        <option value="backup">Full System Backup</option>
+                        <option value="update">System Update</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Estimated Duration (minutes)</label>
+                    <input type="number" class="form-control" id="maintenanceDuration" value="30">
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="notifyUsers" checked>
+                        <label class="form-check-label" for="notifyUsers">
+                            Notify all users about maintenance
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="startMaintenance()">Start Maintenance</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+.activity-timeline {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    border-left: 2px solid #e9ecef;
+    padding-left: 1rem;
+    margin-left: 0.5rem;
+}
+
+.activity-icon {
+    margin-left: -1.5rem;
+    background: white;
+    padding: 0.25rem;
+    border-radius: 50%;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.alerts-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#userActivityChart, #userRoleChart {
+    max-height: 300px;
+}
+
+.card-header h5 {
+    color: #495057;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts
+    initializeUserActivityChart();
+    initializeUserRoleChart();
+    
+    // Auto-refresh dashboard every 5 minutes
+    setInterval(refreshDashboard, 300000);
+});
+
+function initializeUserActivityChart() {
+    const ctx = document.getElementById('userActivityChart').getContext('2d');
+    const activityData = {{ user_activity_data|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: activityData.labels,
+            datasets: [{
+                label: 'Active Users',
+                data: activityData.active_users,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'New Users',
+                data: activityData.new_users,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function initializeUserRoleChart() {
+    const ctx = document.getElementById('userRoleChart').getContext('2d');
+    const roleData = {{ user_role_data|safe }};
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: roleData.labels,
+            datasets: [{
+                data: roleData.values,
+                backgroundColor: [
+                    '#0d6efd',
+                    '#28a745',
+                    '#ffc107'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function generateSystemReport() {
+    // Generate comprehensive system report
+    window.location.href = '/system_admin/reports/generate/';
+}
+
+function backupSystem() {
+    if (confirm('Start system backup? This may take several minutes.')) {
+        // Initiate system backup
+        fetch('/system_admin/backup/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Backup started successfully. You will be notified when complete.');
+            } else {
+                alert('Error starting backup: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Backup error:', error);
+            alert('Error starting backup');
+        });
+    }
+}
+
+function refreshDashboard() {
+    location.reload();
+}
+
+function createUser() {
+    window.location.href = '/system_admin/users/create/';
+}
+
+function viewLogs() {
+    window.open('/system_admin/logs/', '_blank');
+}
+
+function systemMaintenance() {
+    const modal = new bootstrap.Modal(document.getElementById('maintenanceModal'));
+    modal.show();
+}
+
+function exportData() {
+    window.location.href = '/system_admin/export/';
+}
+
+function startMaintenance() {
+    const type = document.getElementById('maintenanceType').value;
+    const duration = document.getElementById('maintenanceDuration').value;
+    const notifyUsers = document.getElementById('notifyUsers').checked;
+    
+    if (confirm(`Start ${type} maintenance for approximately ${duration} minutes?`)) {
+        // Start maintenance mode
+        fetch('/system_admin/maintenance/start/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: type,
+                duration: duration,
+                notify_users: notifyUsers
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Maintenance mode started successfully.');
+                bootstrap.Modal.getInstance(document.getElementById('maintenanceModal')).hide();
+                location.reload();
+            } else {
+                alert('Error starting maintenance: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Maintenance error:', error);
+            alert('Error starting maintenance');
+        });
+    }
+}
+
+function dismissAlert(alertId) {
+    fetch(`/system_admin/alerts/${alertId}/dismiss/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Alert will be removed by Bootstrap's dismiss functionality
+        } else {
+            console.error('Error dismissing alert');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

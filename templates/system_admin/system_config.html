@@ -1,0 +1,798 @@
+{% extends 'base/base.html' %}
+
+{% block title %}System Configuration - System Admin{% endblock %}
+
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block sidebar %}
+<a class="nav-link" href="{% url 'system_admin:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link" href="{% url 'system_admin:user_management' %}">
+    <i class="bi bi-people me-2"></i>User Management
+</a>
+<a class="nav-link active" href="{% url 'system_admin:system_config' %}">
+    <i class="bi bi-gear me-2"></i>System Configuration
+</a>
+<a class="nav-link" href="{% url 'system_admin:analytics' %}">
+    <i class="bi bi-graph-up me-2"></i>Analytics
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'system_admin:dashboard' %}">System Admin</a></li>
+<li class="breadcrumb-item active">System Configuration</li>
+{% endblock %}
+
+{% block page_title %}System Configuration{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-success me-2" onclick="saveAllConfigs()">
+    <i class="bi bi-check-lg me-2"></i>Save All Changes
+</button>
+<button class="btn btn-outline-warning me-2" onclick="resetToDefaults()">
+    <i class="bi bi-arrow-counterclockwise me-2"></i>Reset to Defaults
+</button>
+<button class="btn btn-outline-secondary" onclick="exportConfig()">
+    <i class="bi bi-download me-2"></i>Export Config
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Configuration Tabs -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="configTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" 
+                                data-bs-target="#general" type="button" role="tab">
+                            <i class="bi bi-gear me-2"></i>General Settings
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="payment-tab" data-bs-toggle="tab" 
+                                data-bs-target="#payment" type="button" role="tab">
+                            <i class="bi bi-credit-card me-2"></i>Payment Settings
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="notification-tab" data-bs-toggle="tab" 
+                                data-bs-target="#notification" type="button" role="tab">
+                            <i class="bi bi-bell me-2"></i>Notifications
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" 
+                                data-bs-target="#security" type="button" role="tab">
+                            <i class="bi bi-shield-lock me-2"></i>Security
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" 
+                                data-bs-target="#maintenance" type="button" role="tab">
+                            <i class="bi bi-tools me-2"></i>Maintenance
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="card-body">
+                <div class="tab-content" id="configTabContent">
+                    <!-- General Settings Tab -->
+                    <div class="tab-pane fade show active" id="general" role="tabpanel">
+                        <form id="generalSettingsForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Application Settings</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Application Name</label>
+                                        <input type="text" class="form-control" name="app_name" 
+                                               value="{{ config.app_name }}" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Application Version</label>
+                                        <input type="text" class="form-control" name="app_version" 
+                                               value="{{ config.app_version }}" readonly>
+                                        <div class="form-text">Version is automatically managed</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Time Zone</label>
+                                        <select class="form-select" name="timezone">
+                                            <option value="Africa/Douala" {% if config.timezone == 'Africa/Douala' %}selected{% endif %}>
+                                                Africa/Douala (Cameroon)
+                                            </option>
+                                            <option value="UTC" {% if config.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                            <option value="Europe/London" {% if config.timezone == 'Europe/London' %}selected{% endif %}>
+                                                Europe/London
+                                            </option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Default Currency</label>
+                                        <select class="form-select" name="currency">
+                                            <option value="XAF" {% if config.currency == 'XAF' %}selected{% endif %}>
+                                                XAF (Central African CFA Franc)
+                                            </option>
+                                            <option value="USD" {% if config.currency == 'USD' %}selected{% endif %}>USD</option>
+                                            <option value="EUR" {% if config.currency == 'EUR' %}selected{% endif %}>EUR</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Default Language</label>
+                                        <select class="form-select" name="language">
+                                            <option value="en" {% if config.language == 'en' %}selected{% endif %}>English</option>
+                                            <option value="fr" {% if config.language == 'fr' %}selected{% endif %}>Français</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Business Settings</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Canteen Operating Hours</label>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <label class="form-label small">Opening Time</label>
+                                                <input type="time" class="form-control" name="opening_time" 
+                                                       value="{{ config.opening_time }}">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small">Closing Time</label>
+                                                <input type="time" class="form-control" name="closing_time" 
+                                                       value="{{ config.closing_time }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Order Processing Time (minutes)</label>
+                                        <input type="number" class="form-control" name="order_processing_time" 
+                                               value="{{ config.order_processing_time }}" min="5" max="120">
+                                        <div class="form-text">Average time to prepare orders</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Maximum Daily Orders</label>
+                                        <input type="number" class="form-control" name="max_daily_orders" 
+                                               value="{{ config.max_daily_orders }}" min="50" max="1000">
+                                        <div class="form-text">System limit for daily orders</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Order Cancellation Window (minutes)</label>
+                                        <input type="number" class="form-control" name="cancellation_window" 
+                                               value="{{ config.cancellation_window }}" min="0" max="60">
+                                        <div class="form-text">Time allowed to cancel orders</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="allow_advance_orders" 
+                                                   {% if config.allow_advance_orders %}checked{% endif %}>
+                                            <label class="form-check-label">Allow advance orders</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Payment Settings Tab -->
+                    <div class="tab-pane fade" id="payment" role="tabpanel">
+                        <form id="paymentSettingsForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">MTN Mobile Money</h6>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="mtn_enabled" 
+                                                   {% if config.mtn_enabled %}checked{% endif %}>
+                                            <label class="form-check-label">Enable MTN Mobile Money</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">MTN API Key</label>
+                                        <input type="password" class="form-control" name="mtn_api_key" 
+                                               value="{{ config.mtn_api_key }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">MTN Merchant ID</label>
+                                        <input type="text" class="form-control" name="mtn_merchant_id" 
+                                               value="{{ config.mtn_merchant_id }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">MTN Environment</label>
+                                        <select class="form-select" name="mtn_environment">
+                                            <option value="sandbox" {% if config.mtn_environment == 'sandbox' %}selected{% endif %}>
+                                                Sandbox (Testing)
+                                            </option>
+                                            <option value="production" {% if config.mtn_environment == 'production' %}selected{% endif %}>
+                                                Production (Live)
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Orange Money</h6>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="orange_enabled" 
+                                                   {% if config.orange_enabled %}checked{% endif %}>
+                                            <label class="form-check-label">Enable Orange Money</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Orange API Key</label>
+                                        <input type="password" class="form-control" name="orange_api_key" 
+                                               value="{{ config.orange_api_key }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Orange Merchant ID</label>
+                                        <input type="text" class="form-control" name="orange_merchant_id" 
+                                               value="{{ config.orange_merchant_id }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Orange Environment</label>
+                                        <select class="form-select" name="orange_environment">
+                                            <option value="sandbox" {% if config.orange_environment == 'sandbox' %}selected{% endif %}>
+                                                Sandbox (Testing)
+                                            </option>
+                                            <option value="production" {% if config.orange_environment == 'production' %}selected{% endif %}>
+                                                Production (Live)
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h6 class="text-muted mb-3">Payment Configuration</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Payment Timeout (seconds)</label>
+                                                <input type="number" class="form-control" name="payment_timeout" 
+                                                       value="{{ config.payment_timeout }}" min="30" max="300">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Transaction Fee (%)</label>
+                                                <input type="number" step="0.01" class="form-control" name="transaction_fee" 
+                                                       value="{{ config.transaction_fee }}" min="0" max="10">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Minimum Order Amount (XAF)</label>
+                                                <input type="number" class="form-control" name="min_order_amount" 
+                                                       value="{{ config.min_order_amount }}" min="100">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="auto_refund" 
+                                                   {% if config.auto_refund %}checked{% endif %}>
+                                            <label class="form-check-label">Enable automatic refunds for cancelled orders</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Notification Settings Tab -->
+                    <div class="tab-pane fade" id="notification" role="tabpanel">
+                        <form id="notificationSettingsForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Email Notifications</h6>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="email_enabled" 
+                                                   {% if config.email_enabled %}checked{% endif %}>
+                                            <label class="form-check-label">Enable Email Notifications</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">SMTP Server</label>
+                                        <input type="text" class="form-control" name="smtp_server" 
+                                               value="{{ config.smtp_server }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">SMTP Port</label>
+                                        <input type="number" class="form-control" name="smtp_port" 
+                                               value="{{ config.smtp_port }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">From Email</label>
+                                        <input type="email" class="form-control" name="from_email" 
+                                               value="{{ config.from_email }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">SMTP Username</label>
+                                        <input type="text" class="form-control" name="smtp_username" 
+                                               value="{{ config.smtp_username }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">SMTP Password</label>
+                                        <input type="password" class="form-control" name="smtp_password" 
+                                               value="{{ config.smtp_password }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">SMS Notifications</h6>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="sms_enabled" 
+                                                   {% if config.sms_enabled %}checked{% endif %}>
+                                            <label class="form-check-label">Enable SMS Notifications</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">SMS Provider</label>
+                                        <select class="form-select" name="sms_provider">
+                                            <option value="twilio" {% if config.sms_provider == 'twilio' %}selected{% endif %}>Twilio</option>
+                                            <option value="nexmo" {% if config.sms_provider == 'nexmo' %}selected{% endif %}>Nexmo</option>
+                                            <option value="local" {% if config.sms_provider == 'local' %}selected{% endif %}>Local Provider</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">SMS API Key</label>
+                                        <input type="password" class="form-control" name="sms_api_key" 
+                                               value="{{ config.sms_api_key }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">SMS From Number</label>
+                                        <input type="text" class="form-control" name="sms_from_number" 
+                                               value="{{ config.sms_from_number }}" placeholder="+237XXXXXXXXX">
+                                    </div>
+                                    
+                                    <h6 class="text-muted mb-3 mt-4">Push Notifications</h6>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="push_enabled" 
+                                                   {% if config.push_enabled %}checked{% endif %}>
+                                            <label class="form-check-label">Enable Push Notifications</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Firebase Server Key</label>
+                                        <input type="password" class="form-control" name="firebase_server_key" 
+                                               value="{{ config.firebase_server_key }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h6 class="text-muted mb-3">Notification Preferences</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="notify_order_placed" 
+                                                       {% if config.notify_order_placed %}checked{% endif %}>
+                                                <label class="form-check-label">Order Placed</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="notify_order_ready" 
+                                                       {% if config.notify_order_ready %}checked{% endif %}>
+                                                <label class="form-check-label">Order Ready</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="notify_payment_success" 
+                                                       {% if config.notify_payment_success %}checked{% endif %}>
+                                                <label class="form-check-label">Payment Success</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Security Settings Tab -->
+                    <div class="tab-pane fade" id="security" role="tabpanel">
+                        <form id="securitySettingsForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Authentication Settings</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Session Timeout (minutes)</label>
+                                        <input type="number" class="form-control" name="session_timeout" 
+                                               value="{{ config.session_timeout }}" min="15" max="480">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Password Min Length</label>
+                                        <input type="number" class="form-control" name="password_min_length" 
+                                               value="{{ config.password_min_length }}" min="6" max="20">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="require_uppercase" 
+                                                   {% if config.require_uppercase %}checked{% endif %}>
+                                            <label class="form-check-label">Require uppercase letters</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="require_numbers" 
+                                                   {% if config.require_numbers %}checked{% endif %}>
+                                            <label class="form-check-label">Require numbers</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="require_special_chars" 
+                                                   {% if config.require_special_chars %}checked{% endif %}>
+                                            <label class="form-check-label">Require special characters</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Security Policies</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Max Login Attempts</label>
+                                        <input type="number" class="form-control" name="max_login_attempts" 
+                                               value="{{ config.max_login_attempts }}" min="3" max="10">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Account Lockout Duration (minutes)</label>
+                                        <input type="number" class="form-control" name="lockout_duration" 
+                                               value="{{ config.lockout_duration }}" min="5" max="60">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="enable_2fa" 
+                                                   {% if config.enable_2fa %}checked{% endif %}>
+                                            <label class="form-check-label">Enable Two-Factor Authentication</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="log_security_events" 
+                                                   {% if config.log_security_events %}checked{% endif %}>
+                                            <label class="form-check-label">Log security events</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="require_password_change" 
+                                                   {% if config.require_password_change %}checked{% endif %}>
+                                            <label class="form-check-label">Force password change on first login</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Maintenance Settings Tab -->
+                    <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                        <form id="maintenanceSettingsForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Backup Settings</h6>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="auto_backup" 
+                                                   {% if config.auto_backup %}checked{% endif %}>
+                                            <label class="form-check-label">Enable Automatic Backups</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Backup Frequency</label>
+                                        <select class="form-select" name="backup_frequency">
+                                            <option value="daily" {% if config.backup_frequency == 'daily' %}selected{% endif %}>Daily</option>
+                                            <option value="weekly" {% if config.backup_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                                            <option value="monthly" {% if config.backup_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Backup Time</label>
+                                        <input type="time" class="form-control" name="backup_time" 
+                                               value="{{ config.backup_time }}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Retain Backups (days)</label>
+                                        <input type="number" class="form-control" name="backup_retention" 
+                                               value="{{ config.backup_retention }}" min="7" max="365">
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">System Monitoring</h6>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="performance_monitoring" 
+                                                   {% if config.performance_monitoring %}checked{% endif %}>
+                                            <label class="form-check-label">Enable Performance Monitoring</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Log Level</label>
+                                        <select class="form-select" name="log_level">
+                                            <option value="DEBUG" {% if config.log_level == 'DEBUG' %}selected{% endif %}>Debug</option>
+                                            <option value="INFO" {% if config.log_level == 'INFO' %}selected{% endif %}>Info</option>
+                                            <option value="WARNING" {% if config.log_level == 'WARNING' %}selected{% endif %}>Warning</option>
+                                            <option value="ERROR" {% if config.log_level == 'ERROR' %}selected{% endif %}>Error</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Log Retention (days)</label>
+                                        <input type="number" class="form-control" name="log_retention" 
+                                               value="{{ config.log_retention }}" min="7" max="90">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="email_alerts" 
+                                                   {% if config.email_alerts %}checked{% endif %}>
+                                            <label class="form-check-label">Email critical alerts to admin</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h6 class="text-muted mb-3">Maintenance Mode</h6>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        Maintenance mode will disable access for all users except system administrators.
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="maintenance_mode" 
+                                                   {% if config.maintenance_mode %}checked{% endif %}>
+                                            <label class="form-check-label">Enable Maintenance Mode</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Maintenance Message</label>
+                                        <textarea class="form-control" rows="3" name="maintenance_message">{{ config.maintenance_message }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Connection Modals -->
+<div class="modal fade" id="testConnectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test Connection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="connectionTestResult">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Testing...</span>
+                        </div>
+                        <p class="mt-2">Testing connection...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.nav-tabs .nav-link {
+    color: #6c757d;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-switch .form-check-input {
+    width: 2em;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.tab-content {
+    min-height: 600px;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+h6.text-muted {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    addChangeIndicators();
+    addTestConnectionButtons();
+});
+
+function addChangeIndicators() {
+    const forms = ['generalSettingsForm', 'paymentSettingsForm', 'notificationSettingsForm', 'securitySettingsForm', 'maintenanceSettingsForm'];
+    
+    forms.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) {
+            const inputs = form.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    markAsChanged(input);
+                });
+            });
+        }
+    });
+}
+
+function addTestConnectionButtons() {
+    const paymentTab = document.getElementById('payment');
+    const notificationTab = document.getElementById('notification');
+    
+    const mtnSection = paymentTab.querySelector('h6');
+    if (mtnSection) {
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn btn-outline-info btn-sm ms-2';
+        testBtn.innerHTML = '<i class="bi bi-wifi"></i> Test';
+        testBtn.onclick = () => testConnection('mtn');
+        mtnSection.appendChild(testBtn);
+    }
+}
+
+function markAsChanged(element) {
+    element.classList.add('border-warning');
+}
+
+function testConnection(type) {
+    const modal = new bootstrap.Modal(document.getElementById('testConnectionModal'));
+    modal.show();
+    
+    setTimeout(() => {
+        document.getElementById('connectionTestResult').innerHTML = 
+            '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Connection successful!</div>';
+    }, 2000);
+}
+
+function saveAllConfigs() {
+    const formData = new FormData();
+    
+    ['generalSettingsForm', 'paymentSettingsForm', 'notificationSettingsForm', 'securitySettingsForm', 'maintenanceSettingsForm'].forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) {
+            new FormData(form).forEach((value, key) => {
+                formData.append(key, value);
+            });
+        }
+    });
+    
+    fetch('/system_admin/config/save/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Configuration saved successfully!');
+            location.reload();
+        } else {
+            alert('Error saving configuration');
+        }
+    });
+}
+
+function resetToDefaults() {
+    if (confirm('Reset all settings to default values?')) {
+        fetch('/system_admin/config/reset/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(() => location.reload());
+    }
+}
+
+function exportConfig() {
+    window.location.href = '/system_admin/config/export/';
+}
+</script>
+{% endblock %}

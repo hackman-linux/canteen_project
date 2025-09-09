@@ -1,0 +1,1080 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_title %}Menu Management{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Menu Management</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Quick Actions</h6>
+    <button type="button" class="sidebar-link w-100 text-start btn btn-link p-2" 
+            data-bs-toggle="modal" data-bs-target="#addItemModal">
+        <i class="bi bi-plus-circle"></i>
+        <span>Add New Item</span>
+    </button>
+    <button type="button" class="sidebar-link w-100 text-start btn btn-link p-2"
+            data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="bi bi-folder-plus"></i>
+        <span>Add Category</span>
+    </button>
+    <a href="{% url 'orders:manage' %}" class="sidebar-link">
+        <i class="bi bi-list-check"></i>
+        <span>Manage Orders</span>
+    </a>
+</div>
+
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Menu Status</h6>
+    <div class="d-flex align-items-center justify-content-between">
+        <span class="small">Menu Active</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="menuActiveToggle" checked>
+        </div>
+    </div>
+    <div class="d-flex align-items-center justify-content-between">
+        <span class="small">Accept Orders</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="acceptOrdersToggle" checked>
+        </div>
+    </div>
+</div>
+
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Statistics</h6>
+    <div class="small text-muted">
+        <div class="d-flex justify-content-between">
+            <span>Total Items:</span>
+            <span id="totalItems">{{ total_items }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span>Available:</span>
+            <span id="availableItems">{{ available_items }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span>Categories:</span>
+            <span id="totalCategories">{{ total_categories }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-1">Menu Management</h2>
+            <p class="text-muted mb-0">Manage your canteen menu items and categories</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-success" id="bulkActions">
+                <i class="bi bi-check-square"></i>
+                Bulk Actions
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                <i class="bi bi-plus-circle"></i>
+                Add Item
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Search Items</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchItems" placeholder="Search by name or description...">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" id="filterCategory">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="filterStatus">
+                        <option value="">All Items</option>
+                        <option value="available">Available</option>
+                        <option value="unavailable">Unavailable</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" class="btn btn-secondary w-100" id="clearFilters">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Items Table -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Menu Items</h5>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2" id="itemCount">{{ menu_items.count }} items</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="viewMode" id="tableView" checked>
+                        <label class="btn btn-outline-primary" for="tableView">
+                            <i class="bi bi-table"></i>
+                        </label>
+                        <input type="radio" class="btn-check" name="viewMode" id="cardView">
+                        <label class="btn btn-outline-primary" for="cardView">
+                            <i class="bi bi-grid-3x3"></i>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <!-- Table View -->
+            <div id="tableViewContainer">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="menuItemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                    </div>
+                                </th>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Price (XAF)</th>
+                                <th>Status</th>
+                                <th>Orders Today</th>
+                                <th width="120">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in menu_items %}
+                            <tr data-item-id="{{ item.id }}" data-category="{{ item.category.id }}" 
+                                data-status="{% if item.is_available %}available{% else %}unavailable{% endif %}">
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input item-checkbox" type="checkbox" value="{{ item.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.image %}
+                                        <img src="{{ item.image.url }}" alt="{{ item.name }}" 
+                                             class="rounded me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                        {% else %}
+                                        <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-medium">{{ item.name }}</div>
+                                            <div class="small text-muted">{{ item.description|truncatechars:50 }}</div>
+                                            <div class="small">
+                                                {% if item.is_vegetarian %}
+                                                <span class="badge bg-success badge-sm">Vegetarian</span>
+                                                {% endif %}
+                                                {% if item.is_spicy %}
+                                                <span class="badge bg-warning badge-sm">Spicy</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ item.category.name }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">{{ item.price|floatformat:0 }}</span>
+                                </td>
+                                <td>
+                                    {% if item.is_available %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Unavailable</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-primary fw-medium">{{ item.orders_today|default:0 }}</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="editItem({{ item.id }})" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning" 
+                                                onclick="toggleAvailability({{ item.id }})" 
+                                                title="{% if item.is_available %}Make Unavailable{% else %}Make Available{% endif %}">
+                                            <i class="bi bi-{% if item.is_available %}eye-slash{% else %}eye{% endif %}"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                onclick="deleteItem({{ item.id }})" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mt-2 mb-0">No menu items found</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Card View -->
+            <div id="cardViewContainer" style="display: none;">
+                <div class="row g-3 p-3">
+                    {% for item in menu_items %}
+                    <div class="col-md-6 col-lg-4" data-item-id="{{ item.id }}" data-category="{{ item.category.id }}" 
+                         data-status="{% if item.is_available %}available{% else %}unavailable{% endif %}">
+                        <div class="card h-100">
+                            {% if item.image %}
+                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}" 
+                                 style="height: 200px; object-fit: cover;">
+                            {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                 style="height: 200px;">
+                                <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                            </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">{{ item.name }}</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input item-checkbox" type="checkbox" value="{{ item.id }}">
+                                    </div>
+                                </div>
+                                <p class="card-text small text-muted">{{ item.description|truncatechars:100 }}</p>
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">{{ item.category.name }}</span>
+                                    {% if item.is_vegetarian %}
+                                    <span class="badge bg-success">Vegetarian</span>
+                                    {% endif %}
+                                    {% if item.is_spicy %}
+                                    <span class="badge bg-warning">Spicy</span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold text-primary">{{ item.price|floatformat:0 }} XAF</span>
+                                        <br>
+                                        <small class="text-muted">{{ item.orders_today|default:0 }} orders today</small>
+                                    </div>
+                                    {% if item.is_available %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Unavailable</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="btn-group w-100">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                                            onclick="editItem({{ item.id }})">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm" 
+                                            onclick="toggleAvailability({{ item.id }})">
+                                        <i class="bi bi-{% if item.is_available %}eye-slash{% else %}eye{% endif %}"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                                            onclick="deleteItem({{ item.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3 mb-0">No menu items found</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="addItemForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addItemModalLabel">
+                        <i class="bi bi-plus-circle"></i>
+                        Add New Menu Item
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Item Name *</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Price (XAF) *</label>
+                            <input type="number" class="form-control" name="price" min="0" step="50" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Category *</label>
+                            <select class="form-select" name="category" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Preparation Time (minutes)</label>
+                            <input type="number" class="form-control" name="prep_time" min="1" max="120">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Item Image</label>
+                            <input type="file" class="form-control" name="image" accept="image/*">
+                            <div class="form-text">Recommended: 400x400px, max 2MB</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Properties</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_vegetarian" id="isVegetarian">
+                                <label class="form-check-label" for="isVegetarian">
+                                    <i class="bi bi-leaf text-success"></i> Vegetarian
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_spicy" id="isSpicy">
+                                <label class="form-check-label" for="isSpicy">
+                                    <i class="bi bi-fire text-warning"></i> Spicy
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_available" id="isAvailable" checked>
+                                <label class="form-check-label" for="isAvailable">
+                                    <i class="bi bi-check-circle text-primary"></i> Available for Order
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Add Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal fade" id="editItemModal" tabindex="-1" aria-labelledby="editItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editItemForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editItemModalLabel">
+                        <i class="bi bi-pencil"></i>
+                        Edit Menu Item
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="editItemContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Update Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addCategoryForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCategoryModalLabel">
+                        <i class="bi bi-folder-plus"></i>
+                        Add New Category
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Category Name *</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Icon (Bootstrap Icon class)</label>
+                        <input type="text" class="form-control" name="icon" placeholder="cup-hot, pizza, etc.">
+                        <div class="form-text">Leave empty for default icon</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Display Order</label>
+                        <input type="number" class="form-control" name="order" min="0" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Add Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1" aria-labelledby="bulkActionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkActionsModalLabel">
+                    <i class="bi bi-check-square"></i>
+                    Bulk Actions
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Selected items: <span id="selectedCount">0</span></p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-success" onclick="bulkAction('make_available')">
+                        <i class="bi bi-eye"></i>
+                        Make Available
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="bulkAction('make_unavailable')">
+                        <i class="bi bi-eye-slash"></i>
+                        Make Unavailable
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="bulkAction('change_category')">
+                        <i class="bi bi-folder"></i>
+                        Change Category
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="bulkAction('delete')">
+                        <i class="bi bi-trash"></i>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class MenuManagement {
+    constructor() {
+        this.selectedItems = new Set();
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.initializeFilters();
+    }
+
+    bindEvents() {
+        // View mode toggle
+        $('input[name="viewMode"]').on('change', (e) => {
+            this.toggleView(e.target.id);
+        });
+
+        // Select all checkbox
+        $('#selectAll').on('change', (e) => {
+            this.selectAll(e.target.checked);
+        });
+
+        // Individual checkboxes
+        $(document).on('change', '.item-checkbox', (e) => {
+            this.toggleSelection(e.target.value, e.target.checked);
+        });
+
+        // Search and filters
+        $('#searchItems').on('input', debounce(() => this.applyFilters(), 300));
+        $('#filterCategory, #filterStatus').on('change', () => this.applyFilters());
+        $('#clearFilters').on('click', () => this.clearFilters());
+
+        // Bulk actions
+        $('#bulkActions').on('click', () => this.showBulkActions());
+
+        // Menu status toggles
+        $('#menuActiveToggle, #acceptOrdersToggle').on('change', (e) => {
+            this.updateMenuStatus(e.target.id, e.target.checked);
+        });
+
+        // Form submissions
+        $('#addItemForm').on('submit', (e) => this.handleAddItem(e));
+        $('#editItemForm').on('submit', (e) => this.handleEditItem(e));
+        $('#addCategoryForm').on('submit', (e) => this.handleAddCategory(e));
+    }
+
+    toggleView(viewMode) {
+        if (viewMode === 'tableView') {
+            $('#tableViewContainer').show();
+            $('#cardViewContainer').hide();
+        } else {
+            $('#tableViewContainer').hide();
+            $('#cardViewContainer').show();
+        }
+    }
+
+    selectAll(checked) {
+        $('.item-checkbox').prop('checked', checked);
+        if (checked) {
+            $('.item-checkbox').each((i, el) => {
+                this.selectedItems.add(el.value);
+            });
+        } else {
+            this.selectedItems.clear();
+        }
+        this.updateSelectionUI();
+    }
+
+    toggleSelection(itemId, checked) {
+        if (checked) {
+            this.selectedItems.add(itemId);
+        } else {
+            this.selectedItems.delete(itemId);
+        }
+        this.updateSelectionUI();
+    }
+
+    updateSelectionUI() {
+        const count = this.selectedItems.size;
+        $('#bulkActions').prop('disabled', count === 0);
+        $('#selectedCount').text(count);
+
+        // Update select all checkbox state
+        const totalCheckboxes = $('.item-checkbox').length;
+        const checkedCheckboxes = $('.item-checkbox:checked').length;
+        
+        $('#selectAll').prop('indeterminate', checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes);
+        $('#selectAll').prop('checked', checkedCheckboxes === totalCheckboxes && totalCheckboxes > 0);
+    }
+
+    applyFilters() {
+        const search = $('#searchItems').val().toLowerCase();
+        const category = $('#filterCategory').val();
+        const status = $('#filterStatus').val();
+
+        let visibleCount = 0;
+
+        $('[data-item-id]').each(function() {
+            const $item = $(this);
+            const itemName = $item.find('.fw-medium, .card-title').text().toLowerCase();
+            const itemDescription = $item.find('.small.text-muted').text().toLowerCase();
+            const itemCategory = $item.data('category').toString();
+            const itemStatus = $item.data('status');
+
+            let show = true;
+
+            // Search filter
+            if (search && !itemName.includes(search) && !itemDescription.includes(search)) {
+                show = false;
+            }
+
+            // Category filter
+            if (category && itemCategory !== category) {
+                show = false;
+            }
+
+            // Status filter
+            if (status && itemStatus !== status) {
+                show = false;
+            }
+
+            $item.toggle(show);
+            if (show) visibleCount++;
+        });
+
+        $('#itemCount').text(`${visibleCount} items`);
+    }
+
+    clearFilters() {
+        $('#searchItems').val('');
+        $('#filterCategory').val('');
+        $('#filterStatus').val('');
+        this.applyFilters();
+    }
+
+    showBulkActions() {
+        if (this.selectedItems.size === 0) {
+            showAlert('Please select items first', 'warning');
+            return;
+        }
+        $('#bulkActionsModal').modal('show');
+    }
+
+    editItem(itemId) {
+        showLoading('Loading item details...');
+
+        $.ajax({
+            url: `/menu/item/${itemId}/`,
+            method: 'GET',
+            success: (data) => {
+                hideLoading();
+                $('#editItemContent').html(data);
+                $('#editItemModal').modal('show');
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error loading item details', 'danger');
+            }
+        });
+    }
+
+    toggleAvailability(itemId) {
+        showLoading('Updating availability...');
+
+        $.ajax({
+            url: `/menu/item/${itemId}/toggle-availability/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                if (response.success) {
+                    showAlert(response.message, 'success');
+                    location.reload();
+                } else {
+                    showAlert(response.message || 'Error updating availability', 'danger');
+                }
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error updating availability', 'danger');
+            }
+        });
+    }
+
+    deleteItem(itemId) {
+        if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+            return;
+        }
+
+        showLoading('Deleting item...');
+
+        $.ajax({
+            url: `/menu/item/${itemId}/delete/`,
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                if (response.success) {
+                    showAlert(response.message, 'success');
+                    $(`[data-item-id="${itemId}"]`).fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                    this.updateStatistics();
+                } else {
+                    showAlert(response.message || 'Error deleting item', 'danger');
+                }
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error deleting item', 'danger');
+            }
+        });
+    }
+
+    handleAddItem(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        showLoading('Adding new item...');
+
+        $.ajax({
+            url: '{% url "menu:add_item" %}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                if (response.success) {
+                    showAlert(response.message, 'success');
+                    $('#addItemModal').modal('hide');
+                    location.reload();
+                } else {
+                    showAlert(response.message || 'Error adding item', 'danger');
+                }
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error adding item', 'danger');
+            }
+        });
+    }
+
+    handleEditItem(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const itemId = formData.get('item_id');
+        showLoading('Updating item...');
+
+        $.ajax({
+            url: `/menu/item/${itemId}/edit/`,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                if (response.success) {
+                    showAlert(response.message, 'success');
+                    $('#editItemModal').modal('hide');
+                    location.reload();
+                } else {
+                    showAlert(response.message || 'Error updating item', 'danger');
+                }
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error updating item', 'danger');
+            }
+        });
+    }
+
+    handleAddCategory(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        showLoading('Adding category...');
+
+        $.ajax({
+            url: '{% url "menu:add_category" %}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                if (response.success) {
+                    showAlert(response.message, 'success');
+                    $('#addCategoryModal').modal('hide');
+                    location.reload();
+                } else {
+                    showAlert(response.message || 'Error adding category', 'danger');
+                }
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error adding category', 'danger');
+            }
+        });
+    }
+
+    updateMenuStatus(toggleId, isChecked) {
+        const action = toggleId === 'menuActiveToggle' ? 'menu_active' : 'accept_orders';
+        
+        $.ajax({
+            url: '{% url "menu:update_status" %}',
+            method: 'POST',
+            data: {
+                action: action,
+                status: isChecked
+            },
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                if (response.success) {
+                    showAlert(response.message, 'success');
+                } else {
+                    showAlert(response.message || 'Error updating status', 'danger');
+                    $(`#${toggleId}`).prop('checked', !isChecked);
+                }
+            },
+            error: () => {
+                showAlert('Error updating status', 'danger');
+                $(`#${toggleId}`).prop('checked', !isChecked);
+            }
+        });
+    }
+
+    updateStatistics() {
+        $.ajax({
+            url: '{% url "menu:statistics" %}',
+            method: 'GET',
+            success: (data) => {
+                $('#totalItems').text(data.total_items);
+                $('#availableItems').text(data.available_items);
+                $('#totalCategories').text(data.total_categories);
+            }
+        });
+    }
+
+    initializeFilters() {
+        // Initialize any default filters or states
+        this.applyFilters();
+    }
+}
+
+// Global functions for onclick events
+function editItem(itemId) {
+    menuManagement.editItem(itemId);
+}
+
+function toggleAvailability(itemId) {
+    menuManagement.toggleAvailability(itemId);
+}
+
+function deleteItem(itemId) {
+    menuManagement.deleteItem(itemId);
+}
+
+function bulkAction(action) {
+    if (menuManagement.selectedItems.size === 0) {
+        showAlert('No items selected', 'warning');
+        return;
+    }
+
+    const items = Array.from(menuManagement.selectedItems);
+    let confirmMessage = '';
+    let url = '';
+
+    switch(action) {
+        case 'make_available':
+            confirmMessage = `Make ${items.length} items available?`;
+            url = '{% url "menu:bulk_make_available" %}';
+            break;
+        case 'make_unavailable':
+            confirmMessage = `Make ${items.length} items unavailable?`;
+            url = '{% url "menu:bulk_make_unavailable" %}';
+            break;
+        case 'change_category':
+            const newCategory = prompt('Enter new category ID:');
+            if (!newCategory) return;
+            confirmMessage = `Change category for ${items.length} items?`;
+            url = '{% url "menu:bulk_change_category" %}';
+            break;
+        case 'delete':
+            confirmMessage = `Delete ${items.length} items? This cannot be undone.`;
+            url = '{% url "menu:bulk_delete" %}';
+            break;
+    }
+
+    if (!confirm(confirmMessage)) return;
+
+    showLoading('Processing bulk action...');
+
+    $.ajax({
+        url: url,
+        method: 'POST',
+        data: {
+            items: items,
+            category: action === 'change_category' ? newCategory : undefined
+        },
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        success: (response) => {
+            hideLoading();
+            $('#bulkActionsModal').modal('hide');
+            if (response.success) {
+                showAlert(response.message, 'success');
+                location.reload();
+            } else {
+                showAlert(response.message || 'Error processing bulk action', 'danger');
+            }
+        },
+        error: () => {
+            hideLoading();
+            showAlert('Error processing bulk action', 'danger');
+        }
+    });
+}
+
+// Utility function for debouncing
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Initialize menu management
+let menuManagement;
+$(document).ready(() => {
+    menuManagement = new MenuManagement();
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.sidebar-link.btn {
+    border: none;
+    border-radius: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.sidebar-link.btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-sm {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.card-img-top {
+    transition: transform 0.2s ease;
+}
+
+.card:hover .card-img-top {
+    transform: scale(1.02);
+}
+
+.menu-item-card {
+    transition: all 0.2s ease;
+}
+
+.menu-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+.form-check-input:indeterminate {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.quantity-input {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: var(--bs-secondary);
+}
+
+.sidebar-section {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.sidebar-heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--bs-secondary);
+    margin-bottom: 0.5rem;
+}
+</style>
+{% endblock %}

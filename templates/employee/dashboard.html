@@ -1,0 +1,483 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Employee Dashboard - Canteen System{% endblock %}
+
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block sidebar %}
+<a class="nav-link active" href="{% url 'employee:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link" href="{% url 'employee:menu' %}">
+    <i class="bi bi-card-list me-2"></i>Menu
+</a>
+<a class="nav-link" href="{% url 'employee:place_order' %}">
+    <i class="bi bi-cart-plus me-2"></i>Place Order
+</a>
+<a class="nav-link" href="{% url 'employee:order_history' %}">
+    <i class="bi bi-clock-history me-2"></i>Order History
+</a>
+<a class="nav-link" href="{% url 'employee:notifications' %}">
+    <i class="bi bi-bell me-2"></i>Notifications
+    {% if unread_notifications > 0 %}
+    <span class="badge bg-danger rounded-pill ms-2">{{ unread_notifications }}</span>
+    {% endif %}
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'employee:dashboard' %}">Employee</a></li>
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block page_title %}Welcome Back, {{ user.first_name }}!{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-primary me-2" onclick="quickOrder()">
+    <i class="bi bi-lightning me-2"></i>Quick Order
+</button>
+<button class="btn btn-outline-success" onclick="viewTodaysMenu()">
+    <i class="bi bi-eye me-2"></i>Today's Menu
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Employee Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ current_orders_count }}</h4>
+                        <p class="card-text">Active Orders</p>
+                    </div>
+                    <i class="bi bi-cart-check fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ monthly_orders }}</h4>
+                        <p class="card-text">This Month</p>
+                    </div>
+                    <i class="bi bi-graph-up fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ wallet_balance|floatformat:0 }} XAF</h4>
+                        <p class="card-text">Wallet Balance</p>
+                    </div>
+                    <i class="bi bi-wallet fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ favorite_items_count }}</h4>
+                        <p class="card-text">Favorite Items</p>
+                    </div>
+                    <i class="bi bi-heart fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Current Orders -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-cart-check me-2"></i>Active Orders
+                </h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshOrders()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                {% if current_orders %}
+                    <div class="row" id="currentOrdersContainer">
+                        {% for order in current_orders %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-primary order-card" data-order-id="{{ order.id }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0">Order #{{ order.id }}</h6>
+                                        <span class="badge bg-{{ order.status_color }} order-status" 
+                                              data-order-id="{{ order.id }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <p class="text-muted mb-2">
+                                        <small>
+                                            <i class="bi bi-clock me-1"></i>
+                                            Ordered {{ order.created_at|timesince }} ago
+                                        </small>
+                                    </p>
+                                    <div class="order-items mb-2">
+                                        {% for item in order.items.all|slice:":2" %}
+                                            <small class="d-block">{{ item.quantity }}x {{ item.menu_item.name }}</small>
+                                        {% endfor %}
+                                        {% if order.items.count > 2 %}
+                                            <small class="text-muted">+{{ order.items.count|add:"-2" }} more items</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong class="text-primary">{{ order.total_amount|floatformat:0 }} XAF</strong>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="viewOrderDetails({{ order.id }})">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            {% if order.status == 'pending' %}
+                                            <button class="btn btn-outline-danger" onclick="cancelOrder({{ order.id }})">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-cart-x text-muted" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted mt-3">No active orders</h6>
+                        <p class="text-muted">Place your first order from today's menu!</p>
+                        <button class="btn btn-primary" onclick="viewTodaysMenu()">
+                            <i class="bi bi-plus me-2"></i>Place Order
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions & Menu Highlights -->
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="quickOrder()">
+                        <i class="bi bi-cart-plus me-2"></i>Reorder Last Meal
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="viewMenu()">
+                        <i class="bi bi-card-list me-2"></i>Browse Menu
+                    </button>
+                    <button class="btn btn-outline-success" onclick="topUpWallet()">
+                        <i class="bi bi-wallet2 me-2"></i>Top Up Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Today's Specials -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-star me-2"></i>Today's Specials
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if todays_specials %}
+                    {% for special in todays_specials %}
+                    <div class="d-flex align-items-center mb-3 special-item" data-item-id="{{ special.id }}">
+                        <div class="flex-shrink-0 me-3">
+                            {% if special.image %}
+                                <img src="{{ special.image.url }}" 
+                                     alt="{{ special.name }}"
+                                     class="rounded"
+                                     style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                     style="width: 50px; height: 50px;">
+                                    <i class="bi bi-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ special.name }}</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">{{ special.price|floatformat:0 }} XAF</small>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="addToCart({{ special.id }})">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No specials available today</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Notifications -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-bell me-2"></i>Recent Notifications
+                </h5>
+                <a href="{% url 'employee:notifications' %}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_notifications %}
+                    <div class="list-group list-group-flush">
+                        {% for notification in recent_notifications %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">{{ notification.title }}</div>
+                                <p class="mb-1">{{ notification.message|truncatewords:10 }}</p>
+                                <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                            </div>
+                            {% if not notification.is_read %}
+                                <span class="badge bg-primary rounded-pill">New</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No recent notifications</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Up Wallet Modal -->
+<div class="modal fade" id="topUpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Top Up Wallet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="topUpForm">
+                    <div class="mb-3">
+                        <label class="form-label">Amount (XAF)</label>
+                        <input type="number" class="form-control" id="topUpAmount" min="500" max="50000" required>
+                        <div class="form-text">Minimum: 2000 XAF, Maximum: 50,000 XAF</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-select" id="paymentMethod" required>
+                            <option value="">Select payment method</option>
+                            <option value="mtn_momo">MTN Mobile Money</option>
+                            <option value="orange_money">Orange Money</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="phoneNumberGroup" style="display: none;">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phoneNumber" placeholder="6XXXXXXXX">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="processTopUp()">
+                    <i class="bi bi-credit-card me-2"></i>Process Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-refresh order status every 30 seconds
+    setInterval(refreshOrderStatus, 30000);
+    
+    // Payment method change handler
+    $('#paymentMethod').change(function() {
+        const phoneGroup = $('#phoneNumberGroup');
+        if ($(this).val()) {
+            phoneGroup.show();
+        } else {
+            phoneGroup.hide();
+        }
+    });
+});
+
+// Order Management Functions
+function refreshOrders() {
+    const container = $('#currentOrdersContainer');
+    container.html('<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>');
+    
+    $.get('{% url "employee:refresh_orders" %}')
+        .done(function(data) {
+            container.html(data.html);
+        })
+        .fail(function() {
+            notificationManager.show('Failed to refresh orders', 'danger');
+        });
+}
+
+function refreshOrderStatus() {
+    $('.order-status').each(function() {
+        const orderId = $(this).data('order-id');
+        const statusElement = $(this);
+        
+        $.get(`/employee/orders/${orderId}/status/`)
+            .done(function(data) {
+                if (data.status !== statusElement.text().trim()) {
+                    statusElement.removeClass().addClass(`badge bg-${data.color}`).text(data.status);
+                    notificationManager.show(`Order #${orderId} status updated: ${data.status}`, 'info');
+                }
+            });
+    });
+}
+
+function viewOrderDetails(orderId) {
+    $('#orderDetailsContent').html('<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>');
+    $('#orderDetailsModal').modal('show');
+    
+    $.get(`/employee/orders/${orderId}/details/`)
+        .done(function(data) {
+            $('#orderDetailsContent').html(data.html);
+        })
+        .fail(function() {
+            $('#orderDetailsContent').html('<div class="alert alert-danger">Failed to load order details</div>');
+        });
+}
+
+function cancelOrder(orderId) {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        $.post(`/employee/orders/${orderId}/cancel/`)
+            .done(function(data) {
+                if (data.success) {
+                    notificationManager.show('Order cancelled successfully', 'success');
+                    refreshOrders();
+                } else {
+                    notificationManager.show(data.message || 'Failed to cancel order', 'danger');
+                }
+            })
+            .fail(function() {
+                notificationManager.show('Failed to cancel order', 'danger');
+            });
+    }
+}
+
+// Quick Actions
+function quickOrder() {
+    $.post('{% url "employee:quick_order" %}')
+        .done(function(data) {
+            if (data.success) {
+                notificationManager.show('Quick order placed successfully!', 'success');
+                refreshOrders();
+            } else {
+                notificationManager.show(data.message || 'Failed to place quick order', 'danger');
+            }
+        })
+        .fail(function() {
+            notificationManager.show('Failed to place quick order', 'danger');
+        });
+}
+
+function viewTodaysMenu() {
+    window.location.href = '{% url "employee:menu" %}';
+}
+
+function viewMenu() {
+    window.location.href = '{% url "employee:menu" %}';
+}
+
+function addToCart(itemId) {
+    $.post('{% url "employee:add_to_cart" %}', {
+        item_id: itemId,
+        quantity: 1
+    })
+    .done(function(data) {
+        if (data.success) {
+            notificationManager.show('Item added to cart!', 'success');
+        } else {
+            notificationManager.show(data.message || 'Failed to add item', 'danger');
+        }
+    });
+}
+
+// Wallet Management
+function topUpWallet() {
+    $('#topUpModal').modal('show');
+}
+
+function processTopUp() {
+    const form = $('#topUpForm');
+    const amount = $('#topUpAmount').val();
+    const method = $('#paymentMethod').val();
+    const phone = $('#phoneNumber').val();
+    
+    if (!amount || !method || !phone) {
+        notificationManager.show('Please fill all required fields', 'warning');
+        return;
+    }
+    
+    $.post('{% url "employee:process_topup" %}', {
+        amount: amount,
+        payment_method: method,
+        phone_number: phone
+    })
+    .done(function(data) {
+        if (data.success) {
+            $('#topUpModal').modal('hide');
+            notificationManager.show('Payment processing initiated. Check your phone for payment prompt.', 'info');
+        } else {
+            notificationManager.show(data.message || 'Failed to process payment', 'danger');
+        }
+    })
+    .fail(function() {
+        notificationManager.show('Payment processing failed', 'danger');
+    });
+}
+</script>
+{% endblock %}

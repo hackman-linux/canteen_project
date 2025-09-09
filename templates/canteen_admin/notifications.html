@@ -1,0 +1,607 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Create Notifications - Canteen Admin{% endblock %}
+
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block sidebar %}
+<a class="nav-link" href="{% url 'canteen_admin:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:menu_management' %}">
+    <i class="bi bi-menu-button-wide me-2"></i>Menu Management
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:orders_management' %}">
+    <i class="bi bi-bag me-2"></i>Orders Management
+    {% if pending_orders > 0 %}
+    <span class="badge bg-warning rounded-pill">{{ pending_orders }}</span>
+    {% endif %}
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:inventory' %}">
+    <i class="bi bi-boxes me-2"></i>Inventory
+    {% if low_stock_items > 0 %}
+    <span class="badge bg-danger rounded-pill">{{ low_stock_items }}</span>
+    {% endif %}
+</a>
+<a class="nav-link active" href="{% url 'canteen_admin:notifications_create' %}">
+    <i class="bi bi-bell me-2"></i>Notifications
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:reports' %}">
+    <i class="bi bi-graph-up me-2"></i>Reports
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'canteen_admin:dashboard' %}">Canteen Admin</a></li>
+<li class="breadcrumb-item active">Create Notifications</li>
+{% endblock %}
+
+{% block page_title %}Notification Management{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#createNotificationModal">
+    <i class="bi bi-plus me-2"></i>Create Notification
+</button>
+<button class="btn btn-outline-primary me-2" onclick="previewNotification()">
+    <i class="bi bi-eye me-2"></i>Preview
+</button>
+<button class="btn btn-outline-secondary" onclick="refreshNotifications()">
+    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Notification Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ total_sent }}</h4>
+                        <p class="card-text">Total Sent</p>
+                    </div>
+                    <i class="bi bi-send fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ sent_today }}</h4>
+                        <p class="card-text">Sent Today</p>
+                    </div>
+                    <i class="bi bi-calendar-day fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ active_employees }}</h4>
+                        <p class="card-text">Active Recipients</p>
+                    </div>
+                    <i class="bi bi-people fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">{{ scheduled_notifications }}</h4>
+                        <p class="card-text">Scheduled</p>
+                    </div>
+                    <i class="bi bi-clock fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="sendMenuUpdate()">
+                            <i class="bi bi-menu-button-wide d-block fs-3 mb-2"></i>
+                            <div>Menu Update</div>
+                            <small class="text-muted">Notify about new items</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-success w-100 mb-2" onclick="sendSpecialOffer()">
+                            <i class="bi bi-percent d-block fs-3 mb-2"></i>
+                            <div>Special Offer</div>
+                            <small class="text-muted">Promotion announcement</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-warning w-100 mb-2" onclick="sendServiceAlert()">
+                            <i class="bi bi-exclamation-triangle d-block fs-3 mb-2"></i>
+                            <div>Service Alert</div>
+                            <small class="text-muted">Important updates</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-info w-100 mb-2" onclick="sendScheduleUpdate()">
+                            <i class="bi bi-clock d-block fs-3 mb-2"></i>
+                            <div>Schedule Update</div>
+                            <small class="text-muted">Hours & timing</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Notifications -->
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Recent Notifications
+                </h5>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <select class="form-select" id="filterByType">
+                            <option value="">All Types</option>
+                            <option value="menu">Menu Updates</option>
+                            <option value="promotion">Promotions</option>
+                            <option value="service">Service Alerts</option>
+                            <option value="schedule">Schedule Updates</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" id="filterByStatus">
+                            <option value="">All Status</option>
+                            <option value="sent">Sent</option>
+                            <option value="scheduled">Scheduled</option>
+                            <option value="draft">Draft</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="notificationsTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Recipients</th>
+                        <th>Status</th>
+                        <th>Sent Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notification in notifications %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if notification.notification_type == 'menu' %}
+                                <i class="bi bi-menu-button-wide text-primary me-2"></i>
+                                {% elif notification.notification_type == 'promotion' %}
+                                <i class="bi bi-percent text-success me-2"></i>
+                                {% elif notification.notification_type == 'service' %}
+                                <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                                {% elif notification.notification_type == 'schedule' %}
+                                <i class="bi bi-clock text-info me-2"></i>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ notification.title }}</div>
+                                    <small class="text-muted">{{ notification.message|truncatechars:50 }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if notification.notification_type == 'menu' %}bg-primary
+                                {% elif notification.notification_type == 'promotion' %}bg-success
+                                {% elif notification.notification_type == 'service' %}bg-warning
+                                {% elif notification.notification_type == 'schedule' %}bg-info
+                                {% endif %}">
+                                {{ notification.get_notification_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ notification.recipients_count }}</td>
+                        <td>
+                            {% if notification.status == 'sent' %}
+                            <span class="badge bg-success">Sent</span>
+                            {% elif notification.status == 'scheduled' %}
+                            <span class="badge bg-warning">Scheduled</span>
+                            {% elif notification.status == 'draft' %}
+                            <span class="badge bg-secondary">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ notification.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="viewNotification({{ notification.id }})">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% if notification.status == 'draft' %}
+                                <button class="btn btn-outline-success" onclick="sendNotification({{ notification.id }})">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="editNotification({{ notification.id }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-outline-danger" onclick="deleteNotification({{ notification.id }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="bi bi-bell-slash fs-1 text-muted d-block mb-2"></i>
+                            <p class="text-muted">No notifications found</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if notifications.has_other_pages %}
+        <nav aria-label="Notifications pagination">
+            <ul class="pagination justify-content-center">
+                {% if notifications.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ notifications.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for num in notifications.paginator.page_range %}
+                {% if notifications.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if notifications.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ notifications.next_page_number }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create Notification Modal -->
+<div class="modal fade" id="createNotificationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createNotificationForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="notificationType" class="form-label">Notification Type</label>
+                                <select class="form-select" id="notificationType" name="notification_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="menu">Menu Update</option>
+                                    <option value="promotion">Promotion</option>
+                                    <option value="service">Service Alert</option>
+                                    <option value="schedule">Schedule Update</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority Level</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="low">Low</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Notification Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required 
+                               placeholder="Enter notification title">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required
+                                  placeholder="Enter notification message"></textarea>
+                        <div class="form-text">
+                            <span id="messageCount">0</span>/500 characters
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="recipientType" class="form-label">Recipients</label>
+                                <select class="form-select" id="recipientType" name="recipient_type">
+                                    <option value="all">All Employees</option>
+                                    <option value="department">By Department</option>
+                                    <option value="custom">Custom Selection</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="scheduleType" class="form-label">Send Option</label>
+                                <select class="form-select" id="scheduleType" name="schedule_type">
+                                    <option value="now">Send Now</option>
+                                    <option value="schedule">Schedule for Later</option>
+                                    <option value="draft">Save as Draft</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="departmentSelection" class="mb-3" style="display: none;">
+                        <label class="form-label">Select Departments</label>
+                        <div class="row">
+                            {% for department in departments %}
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="departments" 
+                                           value="{{ department.id }}" id="dept{{ department.id }}">
+                                    <label class="form-check-label" for="dept{{ department.id }}">
+                                        {{ department.name }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div id="scheduleDateTime" class="mb-3" style="display: none;">
+                        <label for="scheduledTime" class="form-label">Schedule Date & Time</label>
+                        <input type="datetime-local" class="form-control" id="scheduledTime" name="scheduled_time">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sendEmail" name="send_email">
+                            <label class="form-check-label" for="sendEmail">
+                                Also send via email
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sendSMS" name="send_sms">
+                            <label class="form-check-label" for="sendSMS">
+                                Also send via SMS
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="previewNotificationModal()">Preview</button>
+                    <button type="submit" class="btn btn-success">Create Notification</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Preview Modal -->
+<div class="modal fade" id="previewNotificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Notification Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="notification-preview bg-light p-3 rounded">
+                    <div class="d-flex align-items-center mb-2">
+                        <i id="previewIcon" class="bi bi-bell me-2 text-primary"></i>
+                        <strong id="previewTitle">Notification Title</strong>
+                        <span id="previewPriority" class="badge bg-secondary ms-auto">Normal</span>
+                    </div>
+                    <p id="previewMessage" class="mb-2">Notification message content will appear here.</p>
+                    <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i>
+                        <span id="previewTime">Just now</span> • 
+                        <span id="previewRecipients">All employees</span>
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% load static %}{% static 'js/notifications.js' %}"></script>
+<script>
+// Initialize notification management
+document.addEventListener('DOMContentLoaded', function() {
+    // Message character counter
+    const messageField = document.getElementById('message');
+    const messageCount = document.getElementById('messageCount');
+    
+    messageField.addEventListener('input', function() {
+        messageCount.textContent = this.value.length;
+        if (this.value.length > 500) {
+            messageCount.classList.add('text-danger');
+        } else {
+            messageCount.classList.remove('text-danger');
+        }
+    });
+    
+    // Recipient type change handler
+    document.getElementById('recipientType').addEventListener('change', function() {
+        const departmentDiv = document.getElementById('departmentSelection');
+        if (this.value === 'department') {
+            departmentDiv.style.display = 'block';
+        } else {
+            departmentDiv.style.display = 'none';
+        }
+    });
+    
+    // Schedule type change handler
+    document.getElementById('scheduleType').addEventListener('change', function() {
+        const scheduleDiv = document.getElementById('scheduleDateTime');
+        if (this.value === 'schedule') {
+            scheduleDiv.style.display = 'block';
+        } else {
+            scheduleDiv.style.display = 'none';
+        }
+    });
+    
+    // Filter handlers
+    document.getElementById('filterByType').addEventListener('change', filterNotifications);
+    document.getElementById('filterByStatus').addEventListener('change', filterNotifications);
+});
+
+// Quick action functions
+function sendMenuUpdate() {
+    fillQuickNotification('menu', 'New Menu Items Available!', 
+        'Check out our latest delicious additions to the canteen menu.');
+}
+
+function sendSpecialOffer() {
+    fillQuickNotification('promotion', 'Special Offer Today!', 
+        'Enjoy 20% off on all beverages until 3 PM. Limited time offer!');
+}
+
+function sendServiceAlert() {
+    fillQuickNotification('service', 'Service Update', 
+        'Please note: Canteen service may be delayed during lunch hours due to maintenance.');
+}
+
+function sendScheduleUpdate() {
+    fillQuickNotification('schedule', 'Operating Hours Update', 
+        'Canteen hours have been extended! Now open from 7 AM to 6 PM.');
+}
+
+function fillQuickNotification(type, title, message) {
+    document.getElementById('notificationType').value = type;
+    document.getElementById('title').value = title;
+    document.getElementById('message').value = message;
+    document.getElementById('messageCount').textContent = message.length;
+    
+    const modal = new bootstrap.Modal(document.getElementById('createNotificationModal'));
+    modal.show();
+}
+
+function previewNotificationModal() {
+    const type = document.getElementById('notificationType').value;
+    const title = document.getElementById('title').value;
+    const message = document.getElementById('message').value;
+    const priority = document.getElementById('priority').value;
+    const recipientType = document.getElementById('recipientType').value;
+    
+    // Update preview content
+    document.getElementById('previewTitle').textContent = title || 'Notification Title';
+    document.getElementById('previewMessage').textContent = message || 'Notification message';
+    document.getElementById('previewPriority').textContent = priority.charAt(0).toUpperCase() + priority.slice(1);
+    
+    // Update icon based on type
+    const iconMap = {
+        'menu': 'bi-menu-button-wide',
+        'promotion': 'bi-percent',
+        'service': 'bi-exclamation-triangle',
+        'schedule': 'bi-clock'
+    };
+    
+    document.getElementById('previewIcon').className = `bi ${iconMap[type] || 'bi-bell'} me-2 text-primary`;
+    
+    // Update recipients
+    const recipientText = recipientType === 'all' ? 'All employees' : 
+                         recipientType === 'department' ? 'Selected departments' : 'Custom selection';
+    document.getElementById('previewRecipients').textContent = recipientText;
+    
+    // Show preview modal
+    const previewModal = new bootstrap.Modal(document.getElementById('previewNotificationModal'));
+    previewModal.show();
+}
+
+function filterNotifications() {
+    const typeFilter = document.getElementById('filterByType').value;
+    const statusFilter = document.getElementById('filterByStatus').value;
+    
+    // Implementation for filtering notifications
+    // This would typically make an AJAX request to filter results
+    console.log('Filtering by type:', typeFilter, 'status:', statusFilter);
+}
+
+function viewNotification(id) {
+    // View notification details
+    console.log('Viewing notification:', id);
+}
+
+function sendNotification(id) {
+    if (confirm('Are you sure you want to send this notification?')) {
+        // Send notification
+        console.log('Sending notification:', id);
+    }
+}
+
+function editNotification(id) {
+    // Edit notification
+    console.log('Editing notification:', id);
+}
+
+function deleteNotification(id) {
+    if (confirm('Are you sure you want to delete this notification?')) {
+        // Delete notification
+        console.log('Deleting notification:', id);
+    }
+}
+
+function refreshNotifications() {
+    // Refresh notifications list
+    location.reload();
+}
+</script>
+{% endblock %}

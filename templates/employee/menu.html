@@ -1,0 +1,554 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_title %}Today's Menu{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Menu</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Quick Actions</h6>
+    <a href="{% url 'orders:history' %}" class="sidebar-link">
+        <i class="bi bi-clock-history"></i>
+        <span>Order History</span>
+    </a>
+    <a href="{% url 'auth:profile' %}" class="sidebar-link">
+        <i class="bi bi-person"></i>
+        <span>Profile</span>
+    </a>
+</div>
+
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Filters</h6>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="filterAvailable" checked>
+        <label class="form-check-label" for="filterAvailable">
+            Available Items
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="filterVegetarian">
+        <label class="form-check-label" for="filterVegetarian">
+            Vegetarian
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="filterSpicy">
+        <label class="form-check-label" for="filterSpicy">
+            Spicy
+        </label>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-1">Today's Menu</h2>
+            <p class="text-muted mb-0">{{ current_date|date:"l, F d, Y" }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" id="refreshMenu">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+            </button>
+            <button type="button" class="btn btn-primary" id="viewCart" data-bs-toggle="modal" data-bs-target="#cartModal">
+                <i class="bi bi-cart3"></i>
+                Cart <span class="badge bg-light text-primary ms-1" id="cartCount">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Menu Categories -->
+    <div class="row" id="menuContainer">
+        {% for category in menu_categories %}
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{{ category.icon }}"></i>
+                        {{ category.name }}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        {% for item in category.items %}
+                        <div class="col-lg-6 col-xl-4">
+                            <div class="menu-item p-3 border-end border-bottom" 
+                                 data-item-id="{{ item.id }}"
+                                 data-category="{{ category.name }}"
+                                 data-vegetarian="{{ item.is_vegetarian }}"
+                                 data-spicy="{{ item.is_spicy }}"
+                                 data-available="{{ item.is_available }}">
+                                
+                                <div class="d-flex align-items-start">
+                                    {% if item.image %}
+                                    <div class="menu-item-image me-3">
+                                        <img src="{{ item.image.url }}" alt="{{ item.name }}" 
+                                             class="img-fluid rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                    </div>
+                                    {% else %}
+                                    <div class="menu-item-image me-3">
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                             style="width: 60px; height: 60px;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <h6 class="mb-0">{{ item.name }}</h6>
+                                            <div class="text-end">
+                                                <span class="fw-bold text-primary">{{ item.price|floatformat:0 }} XAF</span>
+                                                {% if not item.is_available %}
+                                                <span class="badge bg-danger ms-2">Sold Out</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <p class="text-muted small mb-2">{{ item.description|truncatechars:80 }}</p>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="menu-item-tags">
+                                                {% if item.is_vegetarian %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-leaf"></i> Vegetarian
+                                                </span>
+                                                {% endif %}
+                                                {% if item.is_spicy %}
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-fire"></i> Spicy
+                                                </span>
+                                                {% endif %}
+                                                {% if item.prep_time %}
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-clock"></i> {{ item.prep_time }} min
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            {% if item.is_available %}
+                                            <div class="quantity-controls d-flex align-items-center">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                        onclick="decreaseQuantity({{ item.id }})">
+                                                    <i class="bi bi-dash"></i>
+                                                </button>
+                                                <input type="number" class="form-control form-control-sm mx-2 text-center quantity-input" 
+                                                       id="quantity_{{ item.id }}" value="0" min="0" max="10" 
+                                                       style="width: 60px;" onchange="updateCart({{ item.id }})">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                        onclick="increaseQuantity({{ item.id }})">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </div>
+                                            {% else %}
+                                            <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                Not Available
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="text-center py-4">
+                                <i class="bi bi-exclamation-circle text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2">No items available in this category</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle"></i>
+                <strong>No menu available today</strong>
+                <p class="mb-0">Please check back later or contact the canteen administrator.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Cart Modal -->
+<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cartModalLabel">
+                    <i class="bi bi-cart3"></i>
+                    Your Order
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cartItems">
+                    <div class="text-center py-4" id="emptyCart">
+                        <i class="bi bi-cart-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">Your cart is empty</p>
+                    </div>
+                </div>
+                <div id="cartSummary" style="display: none;">
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">0 XAF</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Service Fee:</span>
+                        <span id="serviceFee">0 XAF</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total:</span>
+                        <span id="total">0 XAF</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Shopping</button>
+                <button type="button" class="btn btn-primary" id="proceedToCheckout" disabled>
+                    Proceed to Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class MenuManager {
+    constructor() {
+        this.cart = {};
+        this.serviceFeeRate = 0.05; // 5% service fee
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadCart();
+    }
+
+    bindEvents() {
+        // Refresh menu
+        $('#refreshMenu').on('click', () => this.refreshMenu());
+        
+        // Filter events
+        $('input[type="checkbox"]').on('change', () => this.applyFilters());
+        
+        // Checkout button
+        $('#proceedToCheckout').on('click', () => this.proceedToCheckout());
+    }
+
+    increaseQuantity(itemId) {
+        const input = $(`#quantity_${itemId}`);
+        const currentValue = parseInt(input.val()) || 0;
+        const maxValue = parseInt(input.attr('max')) || 10;
+        
+        if (currentValue < maxValue) {
+            input.val(currentValue + 1);
+            this.updateCart(itemId);
+        }
+    }
+
+    decreaseQuantity(itemId) {
+        const input = $(`#quantity_${itemId}`);
+        const currentValue = parseInt(input.val()) || 0;
+        
+        if (currentValue > 0) {
+            input.val(currentValue - 1);
+            this.updateCart(itemId);
+        }
+    }
+
+    updateCart(itemId) {
+        const quantity = parseInt($(`#quantity_${itemId}`).val()) || 0;
+        const menuItem = $(`.menu-item[data-item-id="${itemId}"]`);
+        const itemName = menuItem.find('h6').text();
+        const itemPrice = this.extractPrice(menuItem.find('.text-primary').text());
+
+        if (quantity > 0) {
+            this.cart[itemId] = {
+                name: itemName,
+                price: itemPrice,
+                quantity: quantity,
+                total: itemPrice * quantity
+            };
+        } else {
+            delete this.cart[itemId];
+        }
+
+        this.updateCartDisplay();
+        this.saveCart();
+    }
+
+    updateCartDisplay() {
+        const cartCount = Object.values(this.cart).reduce((sum, item) => sum + item.quantity, 0);
+        $('#cartCount').text(cartCount);
+
+        // Update cart modal
+        const cartItems = $('#cartItems');
+        const emptyCart = $('#emptyCart');
+        const cartSummary = $('#cartSummary');
+
+        if (cartCount === 0) {
+            emptyCart.show();
+            cartSummary.hide();
+            $('#proceedToCheckout').prop('disabled', true);
+        } else {
+            emptyCart.hide();
+            cartSummary.show();
+            $('#proceedToCheckout').prop('disabled', false);
+
+            let html = '';
+            let subtotal = 0;
+
+            Object.entries(this.cart).forEach(([itemId, item]) => {
+                subtotal += item.total;
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <small class="text-muted d-block">Qty: ${item.quantity} × ${this.formatCurrency(item.price)}</small>
+                        </div>
+                        <div>
+                            <span class="fw-bold">${this.formatCurrency(item.total)}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" 
+                                    onclick="menuManager.removeFromCart('${itemId}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            cartItems.html(html);
+
+            const serviceFee = subtotal * this.serviceFeeRate;
+            const total = subtotal + serviceFee;
+
+            $('#subtotal').text(this.formatCurrency(subtotal));
+            $('#serviceFee').text(this.formatCurrency(serviceFee));
+            $('#total').text(this.formatCurrency(total));
+        }
+    }
+
+    removeFromCart(itemId) {
+        delete this.cart[itemId];
+        $(`#quantity_${itemId}`).val(0);
+        this.updateCartDisplay();
+        this.saveCart();
+    }
+
+    applyFilters() {
+        const showAvailable = $('#filterAvailable').is(':checked');
+        const showVegetarian = $('#filterVegetarian').is(':checked');
+        const showSpicy = $('#filterSpicy').is(':checked');
+
+        $('.menu-item').each(function() {
+            const $item = $(this);
+            const isAvailable = $item.data('available') === true;
+            const isVegetarian = $item.data('vegetarian') === true;
+            const isSpicy = $item.data('spicy') === true;
+
+            let show = true;
+
+            if (showAvailable && !isAvailable) show = false;
+            if (showVegetarian && !isVegetarian) show = false;
+            if (showSpicy && !isSpicy) show = false;
+
+            $item.toggle(show);
+        });
+    }
+
+    refreshMenu() {
+        showLoading('Refreshing menu...');
+        
+        $.ajax({
+            url: "{% url 'menu:view' %}",
+            method: 'GET',
+            success: (data) => {
+                location.reload();
+            },
+            error: (xhr) => {
+                hideLoading();
+                showAlert('Error refreshing menu. Please try again.', 'danger');
+            }
+        });
+    }
+
+    proceedToCheckout() {
+        const cartData = {
+            items: this.cart,
+            subtotal: Object.values(this.cart).reduce((sum, item) => sum + item.total, 0),
+            serviceFee: Object.values(this.cart).reduce((sum, item) => sum + item.total, 0) * this.serviceFeeRate
+        };
+
+        showLoading('Processing order...');
+
+        $.ajax({
+            url: "{% url 'orders:create' %}",
+            method: 'POST',
+            data: JSON.stringify(cartData),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                if (response.success) {
+                    this.cart = {};
+                    this.saveCart();
+                    $('#cartModal').modal('hide');
+                    showAlert('Order placed successfully!', 'success');
+                    
+                    // Redirect to order confirmation or payment
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    }
+                } else {
+                    showAlert(response.message || 'Error placing order', 'danger');
+                }
+            },
+            error: (xhr) => {
+                hideLoading();
+                showAlert('Error placing order. Please try again.', 'danger');
+            }
+        });
+    }
+
+    saveCart() {
+        // Using sessionStorage equivalent in memory since localStorage is not available
+        window.cartData = this.cart;
+    }
+
+    loadCart() {
+        // Load from memory storage
+        if (window.cartData) {
+            this.cart = window.cartData;
+            
+            // Update quantity inputs
+            Object.entries(this.cart).forEach(([itemId, item]) => {
+                $(`#quantity_${itemId}`).val(item.quantity);
+            });
+            
+            this.updateCartDisplay();
+        }
+    }
+
+    extractPrice(priceString) {
+        return parseInt(priceString.replace(/[^\d]/g, '')) || 0;
+    }
+
+    formatCurrency(amount) {
+        return `${amount.toLocaleString()} XAF`;
+    }
+}
+
+// Global functions for onclick events
+function increaseQuantity(itemId) {
+    menuManager.increaseQuantity(itemId);
+}
+
+function decreaseQuantity(itemId) {
+    menuManager.decreaseQuantity(itemId);
+}
+
+function updateCart(itemId) {
+    menuManager.updateCart(itemId);
+}
+
+// Initialize menu manager
+let menuManager;
+$(document).ready(() => {
+    menuManager = new MenuManager();
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.menu-item {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.menu-item:hover {
+    background-color: var(--bs-light);
+    border-color: var(--bs-border-color);
+}
+
+.menu-item-image img {
+    transition: transform 0.2s ease;
+}
+
+.menu-item:hover .menu-item-image img {
+    transform: scale(1.05);
+}
+
+.quantity-controls .btn {
+    border-radius: 0;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quantity-controls .btn:first-child {
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.quantity-controls .btn:last-child {
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.quantity-input {
+    border-radius: 0 !important;
+    height: 35px;
+}
+
+.menu-item-tags .badge {
+    font-size: 0.7rem;
+    margin-right: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .menu-item {
+        border-right: none !important;
+    }
+    
+    .quantity-controls {
+        margin-top: 0.5rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .menu-item-tags {
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %}

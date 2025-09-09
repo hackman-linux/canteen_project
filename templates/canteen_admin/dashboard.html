@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Enterprise Canteen Management System">
+    <title>{% block title %}Canteen Oapi System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link href="{% block custom_css %}{% endblock %}" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            border-right: 1px solid #e2e8f0;
+            min-height: calc(100vh - 76px);
+            position: fixed;
+            left: 0;
+            top: 76px;
+            width: 250px;
+            z-index: 998;
+            transition: transform 0.3s ease;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            flex: 1;
+            transition: margin-left 0.3s ease;
+        }
+
+        .sidebar .nav-link {
+            color: var(--dark-color);
+            border-radius: 8px;
+            margin: 2px 0;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .notification-badge {
+            position: relative;
+            top: -2px;
+            left: -5px;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            border-radius: 12px;
+        }
+
+        /* Custom animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Notification styles */
+        .notification-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        }
+
+        .notification {
+            background: white;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 997;
+                display: none;
+            }
+            
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Include Navigation Bar -->
+    {% include 'base/navbar.html' %}
+
+    <div class="container-fluid p-0">
+        <div class="d-flex">
+            <!-- Sidebar -->
+            <div class="sidebar" id="sidebar">
+                <nav class="nav flex-column py-3 px-2">
+                    {% block sidebar %}
+                    <!-- Default sidebar items - will be overridden by specific templates -->
+                    <a class="nav-link active" href="{% url 'dashboard' %}">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </a>
+                    {% endblock %}
+                </nav>
+            </div>
+            
+            <!-- Main Content Wrapper -->
+            <div class="main-content">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb bg-white p-3 rounded-3 shadow-sm">
+                        {% block breadcrumb %}
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                        {% endblock %}
+                    </ol>
+                </nav>
+                
+                <!-- Alert Messages -->
+                <div id="alertContainer">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}x-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <!-- Page Title -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0 text-dark">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <div class="btn-toolbar">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </div>
+                
+                <!-- Main Content Area -->
+                <div class="fade-in">
+                    {% block content %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body text-center py-5">
+                                    <i class="bi bi-shop display-1 text-primary mb-3"></i>
+                                    <h5 class="card-title">Welcome to Canteen Oapi Management System</h5>
+                                    <p class="card-text text-muted">Select an option from the sidebar to get started.</p>
+                                    <a href="{% url 'menu:view' %}" class="btn btn-primary">
+                                        <i class="bi bi-card-list me-2"></i>View Menu
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Footer -->
+    {% include 'base/footer.html' %}
+
+    <!-- Notification Container for Real-time notifications -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Bootstrap 5 JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Real-time notification system
+        class NotificationManager {
+            constructor() {
+                this.container = document.getElementById('notificationContainer');
+                this.counter = document.getElementById('notificationCount');
+                this.count = parseInt(this.counter?.textContent) || 0;
+            }
+
+            show(message, type = 'info', duration = 5000) {
+                const notification = document.createElement('div');
+                notification.className = `notification alert alert-${type} alert-dismissible`;
+                notification.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-${this.getIcon(type)} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                this.container.appendChild(notification);
+                this.updateCount(1);
+                
+                // Auto-remove notification
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                        this.updateCount(-1);
+                    }
+                }, duration);
+            }
+
+            getIcon(type) {
+                const icons = {
+                    'success': 'check-circle',
+                    'error': 'x-circle',
+                    'danger': 'x-circle',
+                    'warning': 'exclamation-triangle',
+                    'info': 'info-circle'
+                };
+                return icons[type] || 'info-circle';
+            }
+
+            updateCount(change) {
+                if (this.counter) {
+                    this.count = Math.max(0, this.count + change);
+                    this.counter.textContent = this.count;
+                    this.counter.style.display = this.count > 0 ? 'inline' : 'none';
+                }
+            }
+        }
+
+        // Initialize notification manager
+        window.notificationManager = new NotificationManager();
+
+        // AJAX Setup for Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // CSRF Token setup for AJAX
+        const csrftoken = getCookie('csrftoken');
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').not('.notification').fadeOut('slow');
+        }, 5000);
+
+        // Smooth scrolling for anchor links
+        $('a[href^="#"]').on('click', function(event) {
+            const target = $(this.getAttribute('href'));
+            if (target.length) {
+                event.preventDefault();
+                $('html, body').animate({
+                    scrollTop: target.offset().top - 100
+                }, 1000);
+            }
+        });
+
+        // Global utility functions
+        window.appUtils = {
+            // Show loading spinner
+            showLoading: function(element) {
+                if (element) {
+                    element.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Loading...';
+                    element.disabled = true;
+                }
+            },
+            
+            // Hide loading spinner
+            hideLoading: function(element, originalText) {
+                if (element) {
+                    element.innerHTML = originalText;
+                    element.disabled = false;
+                }
+            },
+            
+            // Format currency (XAF)
+            formatCurrency: function(amount) {
+                return new Intl.NumberFormat('fr-CM', {
+                    style: 'currency',
+                    currency: 'XAF',
+                    minimumFractionDigits: 0
+                }).format(amount);
+            },
+            
+            // Format date
+            formatDate: function(dateString, format = 'short') {
+                const date = new Date(dateString);
+                const options = format === 'long' ? 
+                    { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' } :
+                    { year: 'numeric', month: 'short', day: 'numeric' };
+                return date.toLocaleDateString('en-US', options);
+            },
+            
+            // Confirm dialog
+            confirmAction: function(message, callback) {
+                if (confirm(message)) {
+                    callback();
+                }
+            }
+        };
+
+        // Add CSS for spinning animation
+        const style = document.createElement('style');
+        style.textContent = `
+            .spin {
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,1167 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_title %}Order History{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Order History</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Quick Actions</h6>
+    <a href="{% url 'menu:view' %}" class="sidebar-link">
+        <i class="bi bi-basket2"></i>
+        <span>Browse Menu</span>
+    </a>
+    <a href="{% url 'auth:profile' %}" class="sidebar-link">
+        <i class="bi bi-person"></i>
+        <span>Profile</span>
+    </a>
+</div>
+
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Filter Orders</h6>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="filterPending" checked>
+        <label class="form-check-label" for="filterPending">
+            Pending
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="filterProcessing" checked>
+        <label class="form-check-label" for="filterProcessing">
+            Processing
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="filterCompleted" checked>
+        <label class="form-check-label" for="filterCompleted">
+            Completed
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="filterCancelled">
+        <label class="form-check-label" for="filterCancelled">
+            Cancelled
+        </label>
+    </div>
+</div>
+
+<div class="sidebar-section">
+    <h6 class="sidebar-heading">Order Summary</h6>
+    <div class="small text-muted">
+        <div class="d-flex justify-content-between">
+            <span>Total Orders:</span>
+            <span id="totalOrders">{{ total_orders }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span>This Month:</span>
+            <span id="monthlyOrders">{{ monthly_orders }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span>Total Spent:</span>
+            <span id="totalSpent">{{ total_spent|floatformat:0 }} XAF</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-1">Order History</h2>
+            <p class="text-muted mb-0">Track your orders and reorder favorites</p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar3"></i>
+                    Time Period
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" data-period="7">Last 7 days</a></li>
+                    <li><a class="dropdown-item" href="#" data-period="30">Last 30 days</a></li>
+                    <li><a class="dropdown-item" href="#" data-period="90">Last 3 months</a></li>
+                    <li><a class="dropdown-item" href="#" data-period="all">All time</a></li>
+                </ul>
+            </div>
+            <button type="button" class="btn btn-primary" id="newOrder">
+                <i class="bi bi-plus-circle"></i>
+                New Order
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchOrders" placeholder="Search by order ID or items...">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="ready">Ready</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortOrder">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="amount_high">Highest Amount</option>
+                        <option value="amount_low">Lowest Amount</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    <div id="ordersContainer">
+        {% for order in orders %}
+        <div class="card mb-3 order-card" 
+             data-order-id="{{ order.id }}"
+             data-status="{{ order.status }}"
+             data-amount="{{ order.total_amount }}"
+             data-date="{{ order.created_at|date:'Y-m-d' }}">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div>
+                            <h6 class="mb-0">Order #{{ order.id|stringformat:"04d" }}</h6>
+                            <small class="text-muted">{{ order.created_at|date:"F d, Y - g:i A" }}</small>
+                        </div>
+                        <div class="order-status">
+                            {% if order.status == 'pending' %}
+                            <span class="status-badge pending">
+                                <i class="bi bi-clock"></i>
+                                Pending
+                            </span>
+                            {% elif order.status == 'processing' %}
+                            <span class="status-badge processing">
+                                <i class="bi bi-arrow-repeat"></i>
+                                Processing
+                            </span>
+                            {% elif order.status == 'ready' %}
+                            <span class="status-badge ready">
+                                <i class="bi bi-check-circle"></i>
+                                Ready for Pickup
+                            </span>
+                            {% elif order.status == 'completed' %}
+                            <span class="status-badge completed">
+                                <i class="bi bi-check-all"></i>
+                                Completed
+                            </span>
+                            {% elif order.status == 'cancelled' %}
+                            <span class="status-badge cancelled">
+                                <i class="bi bi-x-circle"></i>
+                                Cancelled
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-primary">{{ order.total_amount|floatformat:0 }} XAF</span>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" 
+                                    onclick="viewOrderDetails({{ order.id }})" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            {% if order.status != 'cancelled' %}
+                            <button type="button" class="btn btn-outline-success" 
+                                    onclick="reorderItems({{ order.id }})" title="Reorder">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                            {% endif %}
+                            {% if order.status == 'pending' %}
+                            <button type="button" class="btn btn-outline-danger" 
+                                    onclick="cancelOrder({{ order.id }})" title="Cancel Order">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            {% endif %}
+                            {% if order.status == 'completed' %}
+                            <button type="button" class="btn btn-outline-secondary" 
+                                    onclick="downloadReceipt({{ order.id }})" title="Download Receipt">
+                                <i class="bi bi-download"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Order Progress Timeline -->
+                <div class="order-timeline mb-3">
+                    <div class="timeline-step {% if order.status == 'pending' or order.status == 'processing' or order.status == 'ready' or order.status == 'completed' %}active{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Order Placed</div>
+                            <div class="timeline-time">{{ order.created_at|date:"g:i A" }}</div>
+                        </div>
+                    </div>
+                    <div class="timeline-step {% if order.status == 'processing' or order.status == 'ready' or order.status == 'completed' %}active{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Being Prepared</div>
+                            <div class="timeline-time">
+                                {% if order.processing_at %}
+                                    {{ order.processing_at|date:"g:i A" }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-step {% if order.status == 'ready' or order.status == 'completed' %}active{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Ready for Pickup</div>
+                            <div class="timeline-time">
+                                {% if order.ready_at %}
+                                    {{ order.ready_at|date:"g:i A" }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-step {% if order.status == 'completed' %}active{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="bi bi-check-all"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Order Complete</div>
+                            <div class="timeline-time">
+                                {% if order.completed_at %}
+                                    {{ order.completed_at|date:"g:i A" }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="order-items">
+                    <h6 class="mb-2">Order Items ({{ order.items.count }})</h6>
+                    <div class="row g-2">
+                        {% for item in order.items.all %}
+                        <div class="col-md-6">
+                            <div class="order-item d-flex align-items-center p-2 border rounded">
+                                {% if item.menu_item.image %}
+                                <img src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}" 
+                                     class="rounded me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-image text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <div class="fw-medium">{{ item.menu_item.name }}</div>
+                                    <div class="small text-muted">
+                                        Qty: {{ item.quantity }} × {{ item.price|floatformat:0 }} XAF
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold">{{ item.total|floatformat:0 }} XAF</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="order-summary mt-3 pt-3 border-top">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="small text-muted">
+                                {% if order.special_instructions %}
+                                <strong>Special Instructions:</strong> {{ order.special_instructions }}
+                                {% endif %}
+                                {% if order.estimated_pickup_time %}
+                                <br><strong>Estimated Pickup:</strong> {{ order.estimated_pickup_time|date:"g:i A" }}
+                                {% endif %}
+                                {% if order.payment_method %}
+                                <br><strong>Payment:</strong> {{ order.get_payment_method_display }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-end">
+                                <div class="d-flex justify-content-between">
+                                    <span>Subtotal:</span>
+                                    <span>{{ order.subtotal|floatformat:0 }} XAF</span>
+                                </div>
+                                {% if order.service_fee %}
+                                <div class="d-flex justify-content-between">
+                                    <span>Service Fee:</span>
+                                    <span>{{ order.service_fee|floatformat:0 }} XAF</span>
+                                </div>
+                                {% endif %}
+                                {% if order.tax_amount %}
+                                <div class="d-flex justify-content-between">
+                                    <span>Tax:</span>
+                                    <span>{{ order.tax_amount|floatformat:0 }} XAF</span>
+                                </div>
+                                {% endif %}
+                                <hr class="my-1">
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Total:</span>
+                                    <span>{{ order.total_amount|floatformat:0 }} XAF</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-basket2 text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 mb-2">No Orders Yet</h5>
+                <p class="text-muted mb-4">You haven't placed any orders yet. Start by browsing our delicious menu!</p>
+                <a href="{% url 'menu:view' %}" class="btn btn-primary">
+                    <i class="bi bi-basket2"></i>
+                    Browse Menu
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Load More Button -->
+    {% if has_more_orders %}
+    <div class="text-center mt-4">
+        <button type="button" class="btn btn-outline-primary" id="loadMoreOrders">
+            <i class="bi bi-arrow-down-circle"></i>
+            Load More Orders
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">
+                    <i class="bi bi-receipt"></i>
+                    Order Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="reorderFromModal">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Reorder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">
+                    <i class="bi bi-x-circle text-danger"></i>
+                    Cancel Order
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this order?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Note:</strong> Once cancelled, this action cannot be undone. If payment was already processed, it may take 1-3 business days for the refund.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Reason for cancellation (optional)</label>
+                    <textarea class="form-control" id="cancellationReason" rows="3" placeholder="Please let us know why you're cancelling..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Order</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelOrder">
+                    <i class="bi bi-x-circle"></i>
+                    Cancel Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class OrderHistory {
+    constructor() {
+        this.currentPage = 1;
+        this.selectedOrderId = null;
+        this.filters = {
+            search: '',
+            status: '',
+            period: 'all',
+            sort: 'newest'
+        };
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.initializeFilters();
+        this.startRealTimeUpdates();
+    }
+
+    bindEvents() {
+        // Search functionality
+        $('#searchOrders').on('input', debounce(() => this.applyFilters(), 300));
+        
+        // Filter controls
+        $('#statusFilter, #sortOrder').on('change', () => this.applyFilters());
+        $('input[type="checkbox"]').on('change', () => this.applyFilters());
+        
+        // Time period filter
+        $('.dropdown-item[data-period]').on('click', (e) => {
+            e.preventDefault();
+            this.filters.period = $(e.target).data('period');
+            this.applyFilters();
+        });
+        
+        // Load more orders
+        $('#loadMoreOrders').on('click', () => this.loadMoreOrders());
+        
+        // New order button
+        $('#newOrder').on('click', () => {
+            window.location.href = "{% url 'menu:view' %}";
+        });
+        
+        // Modal events
+        $('#orderDetailsModal').on('hide.bs.modal', () => {
+            this.selectedOrderId = null;
+        });
+        
+        $('#reorderFromModal').on('click', () => this.reorderFromModal());
+        $('#confirmCancelOrder').on('click', () => this.confirmCancelOrder());
+    }
+
+    applyFilters() {
+        this.filters.search = $('#searchOrders').val().toLowerCase();
+        this.filters.status = $('#statusFilter').val();
+        this.filters.sort = $('#sortOrder').val();
+
+        // Get checked status filters from sidebar
+        const statusFilters = [];
+        if ($('#filterPending').is(':checked')) statusFilters.push('pending');
+        if ($('#filterProcessing').is(':checked')) statusFilters.push('processing');
+        if ($('#filterCompleted').is(':checked')) statusFilters.push('completed');
+        if ($('#filterCancelled').is(':checked')) statusFilters.push('cancelled');
+
+        let visibleCount = 0;
+
+        $('.order-card').each(function() {
+            const $card = $(this);
+            const orderId = $card.data('order-id').toString();
+            const status = $card.data('status');
+            const amount = $card.data('amount');
+            const orderText = $card.text().toLowerCase();
+
+            let show = true;
+
+            // Search filter
+            if (this.filters.search && !orderText.includes(this.filters.search)) {
+                show = false;
+            }
+
+            // Status filter from dropdown
+            if (this.filters.status && status !== this.filters.status) {
+                show = false;
+            }
+
+            // Status filters from sidebar
+            if (statusFilters.length > 0 && !statusFilters.includes(status)) {
+                show = false;
+            }
+
+            $card.toggle(show);
+            if (show) visibleCount++;
+        }.bind(this));
+
+        // Apply sorting
+        this.applySorting();
+        
+        // Update counters
+        this.updateFilterCounts(visibleCount);
+    }
+
+    applySorting() {
+        const container = $('#ordersContainer');
+        const orders = container.children('.order-card:visible').toArray();
+
+        orders.sort((a, b) => {
+            const $a = $(a);
+            const $b = $(b);
+
+            switch(this.filters.sort) {
+                case 'newest':
+                    return new Date($b.data('date')) - new Date($a.data('date'));
+                case 'oldest':
+                    return new Date($a.data('date')) - new Date($b.data('date'));
+                case 'amount_high':
+                    return $b.data('amount') - $a.data('amount');
+                case 'amount_low':
+                    return $a.data('amount') - $b.data('amount');
+                default:
+                    return 0;
+            }
+        });
+
+        // Reorder DOM elements
+        orders.forEach(order => {
+            container.append(order);
+        });
+    }
+
+    updateFilterCounts(visibleCount) {
+        // Update any counter displays if needed
+        console.log(`Showing ${visibleCount} orders`);
+    }
+
+    viewOrderDetails(orderId) {
+        this.selectedOrderId = orderId;
+        showLoading('Loading order details...');
+
+        $.ajax({
+            url: `{% url 'orders:detail' 0 %}`.replace('0', orderId),
+            method: 'GET',
+            success: (data) => {
+                hideLoading();
+                $('#orderDetailsContent').html(data);
+                $('#orderDetailsModal').modal('show');
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error loading order details', 'danger');
+            }
+        });
+    }
+
+    reorderItems(orderId) {
+        if (!confirm('Add all items from this order to your cart?')) {
+            return;
+        }
+
+        showLoading('Adding items to cart...');
+
+        $.ajax({
+            url: `{% url 'orders:reorder' 0 %}`.replace('0', orderId),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                if (response.success) {
+                    showAlert('Items added to cart successfully!', 'success');
+                    // Redirect to menu with cart populated
+                    window.location.href = "{% url 'menu:view' %}";
+                } else {
+                    showAlert(response.message || 'Error adding items to cart', 'warning');
+                }
+            },
+            error: () => {
+                hideLoading();
+                showAlert('Error processing reorder', 'danger');
+            }
+        });
+    }
+
+    reorderFromModal() {
+        if (this.selectedOrderId) {
+            this.reorderItems(this.selectedOrderId);
+            $('#orderDetailsModal').modal('hide');
+        }
+    }
+
+    cancelOrder(orderId) {
+        this.selectedOrderId = orderId;
+        $('#cancellationReason').val('');
+        $('#cancelOrderModal').modal('show');
+    }
+
+    confirmCancelOrder() {
+        if (!this.selectedOrderId) return;
+
+        const reason = $('#cancellationReason').val();
+        showLoading('Cancelling order...');
+
+        $.ajax({
+            url: `{% url 'orders:cancel' 0 %}`.replace('0', this.selectedOrderId),
+            method: 'POST',
+            data: {
+                reason: reason
+            },
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                hideLoading();
+                $('#cancelOrderModal').modal('hide');
+                
+                if (response.success) {
+                    showAlert('Order cancelled successfully', 'success');
+                    // Update the order card status
+                    this.updateOrderStatus(this.selectedOrderId, 'cancelled');
+                } else {
+                    showAlert(response.message || 'Error cancelling order', 'danger');
+                }
+            },
+            error: () => {
+                hideLoading();
+                $('#cancelOrderModal').modal('hide');
+                showAlert('Error cancelling order', 'danger');
+            }
+        });
+    }
+
+    downloadReceipt(orderId) {
+        showLoading('Generating receipt...');
+
+        // Create a temporary link to download the receipt
+        const link = document.createElement('a');
+        link.href = `{% url 'orders:receipt' 0 %}`.replace('0', orderId);
+        link.download = `receipt_${orderId}.pdf`;
+        link.target = '_blank';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        hideLoading();
+        showAlert('Receipt download started', 'success');
+    }
+
+    loadMoreOrders() {
+        this.currentPage++;
+        showLoading('Loading more orders...');
+
+        $.ajax({
+            url: "{% url 'orders:history' %}",
+            method: 'GET',
+            data: {
+                page: this.currentPage,
+                ...this.filters
+            },
+            success: (data) => {
+                hideLoading();
+                if (data.orders && data.orders.length > 0) {
+                    $('#ordersContainer').append(data.orders);
+                    
+                    if (!data.has_more) {
+                        $('#loadMoreOrders').hide();
+                    }
+                } else {
+                    $('#loadMoreOrders').hide();
+                    showAlert('No more orders to load', 'info');
+                }
+            },
+            error: () => {
+                hideLoading();
+                this.currentPage--; // Revert page increment
+                showAlert('Error loading orders', 'danger');
+            }
+        });
+    }
+
+    updateOrderStatus(orderId, newStatus) {
+        const $orderCard = $(`.order-card[data-order-id="${orderId}"]`);
+        
+        // Update the data attribute
+        $orderCard.attr('data-status', newStatus);
+        
+        // Update the status badge
+        const $statusBadge = $orderCard.find('.status-badge');
+        $statusBadge.removeClass().addClass(`status-badge ${newStatus}`);
+        
+        // Update badge content based on status
+        let badgeContent = '';
+        switch(newStatus) {
+            case 'cancelled':
+                badgeContent = '<i class="bi bi-x-circle"></i> Cancelled';
+                break;
+            case 'completed':
+                badgeContent = '<i class="bi bi-check-all"></i> Completed';
+                break;
+            case 'ready':
+                badgeContent = '<i class="bi bi-check-circle"></i> Ready for Pickup';
+                break;
+            case 'processing':
+                badgeContent = '<i class="bi bi-arrow-repeat"></i> Processing';
+                break;
+            case 'pending':
+                badgeContent = '<i class="bi bi-clock"></i> Pending';
+                break;
+        }
+        $statusBadge.html(badgeContent);
+        
+        // Update action buttons if cancelled
+        if (newStatus === 'cancelled') {
+            const $actionButtons = $orderCard.find('.btn-group');
+            $actionButtons.find('.btn-outline-danger').remove(); // Remove cancel button
+            $actionButtons.find('.btn-outline-success').remove(); // Remove reorder button
+        }
+    }
+
+    startRealTimeUpdates() {
+        // Poll for order updates every 30 seconds
+        setInterval(() => {
+            this.checkOrderUpdates();
+        }, 30000);
+    }
+
+    checkOrderUpdates() {
+        const visibleOrderIds = $('.order-card:visible').map(function() {
+            return $(this).data('order-id');
+        }).get();
+
+        if (visibleOrderIds.length === 0) return;
+
+        $.ajax({
+            url: "{% url 'orders:status_updates' %}",
+            method: 'POST',
+            data: {
+                order_ids: visibleOrderIds
+            },
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: (response) => {
+                if (response.updates && response.updates.length > 0) {
+                    response.updates.forEach(update => {
+                        this.updateOrderStatus(update.order_id, update.new_status);
+                        
+                        // Show notification for status changes
+                        if (update.notify) {
+                            showAlert(`Order #${update.order_id} is now ${update.new_status}`, 'info');
+                        }
+                    });
+                }
+            },
+            error: () => {
+                // Silently fail for real-time updates
+                console.log('Failed to check order updates');
+            }
+        });
+    }
+
+    initializeFilters() {
+        // Apply initial filters if any
+        this.applyFilters();
+    }
+}
+
+// Global functions for onclick events
+function viewOrderDetails(orderId) {
+    orderHistory.viewOrderDetails(orderId);
+}
+
+function reorderItems(orderId) {
+    orderHistory.reorderItems(orderId);
+}
+
+function cancelOrder(orderId) {
+    orderHistory.cancelOrder(orderId);
+}
+
+function downloadReceipt(orderId) {
+    orderHistory.downloadReceipt(orderId);
+}
+
+// Utility function for debouncing
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Initialize order history manager
+let orderHistory;
+$(document).ready(() => {
+    orderHistory = new OrderHistory();
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Order Timeline Styles */
+.order-timeline {
+    display: flex;
+    position: relative;
+    padding: 1rem 0;
+}
+
+.order-timeline::before {
+    content: '';
+    position: absolute;
+    top: 2rem;
+    left: 1.5rem;
+    right: 1.5rem;
+    height: 2px;
+    background-color: var(--border-color);
+    z-index: 1;
+}
+
+.timeline-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.5rem;
+    font-size: 1rem;
+    color: var(--text-muted);
+    transition: all var(--transition-normal);
+}
+
+.timeline-step.active .timeline-icon {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.2);
+}
+
+.timeline-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.timeline-step.active .timeline-title {
+    color: var(--success-color);
+}
+
+.timeline-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Order Card Styles */
+.order-card {
+    transition: all var(--transition-normal);
+    border: 1px solid var(--border-color);
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.order-item {
+    background-color: var(--bg-secondary);
+    transition: background-color var(--transition-fast);
+}
+
+.order-item:hover {
+    background-color: var(--border-light);
+}
+
+/* Status Badge Styles */
+.status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    animation: pulse 2s infinite;
+}
+
+.status-badge.pending {
+    background-color: rgba(217, 119, 6, 0.1);
+    color: var(--warning-color);
+    border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.status-badge.processing {
+    background-color: rgba(14, 165, 233, 0.1);
+    color: var(--info-color);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.status-badge.processing i {
+    animation: spin 2s linear infinite;
+}
+
+.status-badge.ready {
+    background-color: rgba(5, 150, 105, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.status-badge.completed {
+    background-color: rgba(5, 150, 105, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+    animation: none;
+}
+
+.status-badge.cancelled {
+    background-color: rgba(220, 38, 38, 0.1);
+    color: var(--danger-color);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Action Buttons */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Order Summary Styling */
+.order-summary {
+    background-color: rgba(37, 99, 235, 0.05);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Responsive Timeline */
+@media (max-width: 767.98px) {
+    .order-timeline {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-left: 2rem;
+    }
+    
+    .order-timeline::before {
+        top: 1.5rem;
+        bottom: 1.5rem;
+        left: 1.5rem;
+        width: 2px;
+        height: auto;
+        right: auto;
+    }
+    
+    .timeline-step {
+        flex: none;
+        text-align: left;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .timeline-step:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-icon {
+        margin: 0;
+        flex-shrink: 0;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-left: -2.25rem;
+    }
+    
+    .timeline-content {
+        flex-grow: 1;
+    }
+    
+    .order-item {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .order-summary {
+        padding: 0.75rem;
+    }
+}
+
+/* Loading State for Order Cards */
+.order-card.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.order-card.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--primary-color);
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Empty State Styling */
+.order-card .card-body.text-center {
+    padding: 3rem 2rem;
+}
+
+.order-card .card-body.text-center i {
+    opacity: 0.5;
+}
+
+/* Filter Sidebar Enhancements */
+.sidebar-section .form-check {
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-section .form-check-label {
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.sidebar-section .small {
+    line-height: 1.4;
+}
+
+/* Search and Filter Bar */
+.card .card-body .row.g-3 .col-md-6 .input-group .form-control {
+    border-right: none;
+}
+
+.card .card-body .row.g-3 .col-md-6 .input-group .btn {
+    border-left: none;
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+/* Modal Enhancements */
+.modal-dialog.modal-lg {
+    max-width: 900px;
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Order Details Modal Specific */
+#orderDetailsContent {
+    padding: 0;
+}
+
+#orderDetailsContent .timeline-step {
+    margin-bottom: 1rem;
+}
+
+/* Print Styles for Receipts */
+@media print {
+    .order-card {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .btn, .dropdown {
+        display: none !important;
+    }
+    
+    .order-timeline::before {
+        background-color: #000 !important;
+    }
+    
+    .timeline-step.active .timeline-icon {
+        background-color: #000 !important;
+        border-color: #000 !important;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .status-badge {
+        border-width: 2px;
+    }
+    
+    .timeline-step.active .timeline-icon {
+        border-width: 3px;
+    }
+    
+    .order-timeline::before {
+        height: 3px;
+    }
+}
+</style>
+{% endblock %}

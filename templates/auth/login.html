@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Oapi Canteen Management System</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --danger-color: #dc2626;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6, #06b6d4);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            margin: 20px;
+        }
+
+        .login-left {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .login-right {
+            padding: 60px 40px;
+        }
+
+        .brand-logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .brand-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .brand-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        .login-form {
+            max-width: 400px;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 15px 20px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+
+        .input-group-text {
+            border-radius: 12px 0 0 12px;
+            border: 2px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-right: none;
+        }
+
+        .form-control.with-icon {
+            border-radius: 0 12px 12px 0;
+            border-left: none;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            margin-bottom: 25px;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .forgot-password {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-password:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        .divider {
+            position: relative;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .role-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .role-option:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .role-option.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .role-option i {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .role-option span {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .login-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .login-left {
+                padding: 40px 30px;
+            }
+            
+            .login-right {
+                padding: 40px 30px;
+            }
+            
+            .brand-logo {
+                font-size: 3rem;
+            }
+            
+            .brand-title {
+                font-size: 1.5rem;
+            }
+            
+            .role-selector {
+                flex-direction: column;
+            }
+        }
+
+        /* Loading spinner */
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Animation for form appearance */
+        .login-form {
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="row g-0 h-100">
+            <!-- Left Panel -->
+            <div class="col-lg-5 login-left">
+                <div class="text-center">
+                    <i class="bi bi-shop brand-logo"></i>
+                    <h1 class="brand-title">Oapi Canteen</h1>
+                    <p class="brand-subtitle">
+                       Oapi Canteen Management System<br>
+                        Streamline your canteen operations with our comprehensive solution
+                    </p>
+                    
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-center gap-3 text-center">
+                            <div>
+                                <i class="bi bi-clock fs-4 d-block mb-2"></i>
+                                <small>Real-time<br>Tracking</small>
+                            </div>
+                            <div>
+                                <i class="bi bi-wallet2 fs-4 d-block mb-2"></i>
+                                <small>Mobile<br>Payments</small>
+                            </div>
+                            <div>
+                                <i class="bi bi-graph-up fs-4 d-block mb-2"></i>
+                                <small>Analytics<br>Reports</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Login Form -->
+            <div class="col-lg-7 login-right">
+                <div class="login-form">
+                    <div class="text-center mb-4">
+                        <h2 class="mb-2">Welcome Back!</h2>
+                        <p class="text-muted">Please sign in to your account</p>
+                    </div>
+
+                    <!-- Alert Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <i class="bi bi-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Role Selection -->
+                    <div class="role-selector">
+                        <div class="role-option active" data-role="employee">
+                            <i class="bi bi-person"></i>
+                            <span>Employee</span>
+                        </div>
+                        <div class="role-option" data-role="canteen_admin">
+                            <i class="bi bi-shop"></i>
+                            <span>Canteen Admin</span>
+                        </div>
+                        <div class="role-option" data-role="system_admin">
+                            <i class="bi bi-gear"></i>
+                            <span>System Admin</span>
+                        </div>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form method="post" id="loginForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="user_role" id="userRole" value="employee">
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control with-icon" 
+                                       id="username" 
+                                       name="username" 
+                                       placeholder="Enter your username"
+                                       required 
+                                       autofocus>
+                            </div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <input type="password" 
+                                       class="form-control with-icon" 
+                                       id="password" 
+                                       name="password" 
+                                       placeholder="Enter your password"
+                                       required>
+                                <button class="btn btn-outline-secondary" 
+                                        type="button" 
+                                        id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="rememberMe" 
+                                       name="remember_me">
+                                <label class="form-check-label" for="rememberMe">
+                                    Remember me
+                                </label>
+                            </div>
+                            <a href="{% url 'password_reset' %}" class="forgot-password">
+                                Forgot password?
+                            </a>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
+                            <span class="login-text">Sign In</span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </span>
+                        </button>
+                    </form>
+
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+
+                    <!-- Quick Access -->
+                    <div class="text-center">
+                        <p class="text-muted mb-2">Quick Access</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-outline-primary btn-sm" onclick="quickLogin('demo_employee')">
+                                <i class="bi bi-person me-1"></i>Demo Employee
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="quickLogin('demo_admin')">
+                                <i class="bi bi-shop me-1"></i>Demo Admin
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="login-footer">
+                        <p class="mb-0">
+                            Accounts are created by System Administrator<br>
+                            <small>Contact your IT department for access</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Login Page JavaScript
+        class LoginManager {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.setupFormValidation();
+                this.focusUsername();
+            }
+
+            setupEventListeners() {
+                // Role selection
+                document.querySelectorAll('.role-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        this.selectRole(e.currentTarget);
+                    });
+                });
+
+                // Password visibility toggle
+                const togglePassword = document.getElementById('togglePassword');
+                if (togglePassword) {
+                    togglePassword.addEventListener('click', this.togglePasswordVisibility);
+                }
+
+                // Form submission
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', (e) => {
+                        this.handleFormSubmit(e);
+                    });
+                }
+
+                // Enter key handling for better UX
+                document.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.target.closest('form')) {
+                        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+                    }
+                });
+            }
+
+            selectRole(selectedOption) {
+                // Remove active class from all options
+                document.querySelectorAll('.role-option').forEach(option => {
+                    option.classList.remove('active');
+                });
+
+                // Add active class to selected option
+                selectedOption.classList.add('active');
+                
+                // Update hidden field
+                const role = selectedOption.dataset.role;
+                document.getElementById('userRole').value = role;
+                
+                // Update form placeholder text based on role
+                this.updatePlaceholders(role);
+            }
+
+            updatePlaceholders(role) {
+                const usernameInput = document.getElementById('username');
+                const placeholders = {
+                    'employee': 'Enter your employee ID',
+                    'canteen_admin': 'Enter your admin username',
+                    'system_admin': 'Enter your system admin username'
+                };
+                
+                if (usernameInput && placeholders[role]) {
+                    usernameInput.placeholder = placeholders[role];
+                }
+            }
+
+            togglePasswordVisibility() {
+                const passwordInput = document.getElementById('password');
+                const toggleButton = document.getElementById('togglePassword');
+                const icon = toggleButton.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.replace('bi-eye', 'bi-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.replace('bi-eye-slash', 'bi-eye');
+                }
+            }
+
+            setupFormValidation() {
+                const form = document.getElementById('loginForm');
+                const inputs = form.querySelectorAll('input[required]');
+                
+                inputs.forEach(input => {
+                    input.addEventListener('blur', () => {
+                        this.validateInput(input);
+                    });
+                    
+                    input.addEventListener('input', () => {
+                        this.clearValidation(input);
+                    });
+                });
+            }
+
+            validateInput(input) {
+                const isValid = input.checkValidity();
+                const feedback = input.nextElementSibling;
+                
+                if (!isValid) {
+                    input.classList.add('is-invalid');
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = input.validationMessage;
+                    }
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                }
+                
+                return isValid;
+            }
+
+            clearValidation(input) {
+                input.classList.remove('is-invalid', 'is-valid');
+            }
+
+            handleFormSubmit(e) {
+                e.preventDefault();
+                
+                // Validate all inputs
+                const form = e.target;
+                const inputs = form.querySelectorAll('input[required]');
+                let isFormValid = true;
+                
+                inputs.forEach(input => {
+                    if (!this.validateInput(input)) {
+                        isFormValid = false;
+                    }
+                });
+                
+                if (!isFormValid) {
+                    this.showAlert('Please fill in all required fields correctly.', 'danger');
+                    return;
+                }
+                
+                // Show loading state
+                this.setLoadingState(true);
+                
+                // Submit form after a brief delay (simulate processing)
+                setTimeout(() => {
+                    form.submit();
+                }, 500);
+            }
+
+            setLoadingState(isLoading) {
+                const loginBtn = document.getElementById('loginBtn');
+                const loginText = loginBtn.querySelector('.login-text');
+                const spinner = loginBtn.querySelector('.spinner-border');
+                
+                if (isLoading) {
+                    loginBtn.disabled = true;
+                    loginText.textContent = 'Signing In...';
+                    spinner.classList.remove('d-none');
+                } else {
+                    loginBtn.disabled = false;
+                    loginText.textContent = 'Sign In';
+                    spinner.classList.add('d-none');
+                }
+            }
+
+            showAlert(message, type = 'info') {
+                // Remove existing alerts
+                const existingAlerts = document.querySelectorAll('.alert');
+                existingAlerts.forEach(alert => alert.remove());
+                
+                // Create new alert
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.innerHTML = `
+                    <i class="bi bi-${type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                // Insert before the role selector
+                const roleSelector = document.querySelector('.role-selector');
+                roleSelector.parentNode.insertBefore(alertDiv, roleSelector);
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
+            }
+
+            focusUsername() {
+                // Focus username field after page load
+                setTimeout(() => {
+                    const usernameInput = document.getElementById('username');
+                    if (usernameInput) {
+                        usernameInput.focus();
+                    }
+                }, 100);
+            }
+        }
+
+        // Quick login function for demo purposes
+        function quickLogin(type) {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const roleOptions = document.querySelectorAll('.role-option');
+            
+            if (type === 'demo_employee') {
+                usernameInput.value = 'emp001';
+                passwordInput.value = 'demo123';
+                roleOptions[0].click(); // Select employee role
+            } else if (type === 'demo_admin') {
+                usernameInput.value = 'admin001';
+                passwordInput.value = 'admin123';
+                roleOptions[1].click(); // Select canteen admin role
+            }
+            
+            // Show notification
+            const loginManager = window.loginManager;
+            loginManager.showAlert(`Demo credentials loaded for ${type.replace('demo_', '')}`, 'success');
+        }
+
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            window.loginManager = new LoginManager();
+        });
+
+        // Handle back button/page refresh
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Reset loading state if page was cached
+                const loginManager = window.loginManager;
+                if (loginManager) {
+                    loginManager.setLoadingState(false);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
