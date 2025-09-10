@@ -16,8 +16,9 @@ app_name = 'auth'
 
 # Main authentication URLs
 urlpatterns = [
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+    path("login/", views.login_view, name="login"),
+    path("logout/", views.logout_view, name="logout"),
+    path("contact-admin-reset/", views.contact_admin_reset, name="contact_admin_reset"),
 ]
 
 # Employee URLs
@@ -32,6 +33,7 @@ employee_urlpatterns = [
     path('add-to-cart/', orders_views.add_to_cart, name='add_to_cart'),
     path('quick-order/', orders_views.quick_order, name='quick_order'),
     path('process-topup/', payments_views.process_topup, name='process_topup'),
+    # path("contact-admin-reset/", views.contact_admin_reset, name="contact_admin_reset"),
 ]
 
 # Canteen Admin URLs
@@ -47,7 +49,7 @@ canteen_admin_urlpatterns = [
     path('order-queue/', orders_views.order_queue, name='order_queue'),
     path('update-order-status/', orders_views.update_order_status, name='update_order_status'),
     path('add-menu-item/', menu_views.add_menu_item, name='add_menu_item'),
-    path('generate-daily-report/', reports_views.generate_daily_report, name='generate_daily_report'),
+    # path('generate-daily-report/', reports_views.generate_daily_report, name='generate_daily_report'),
 ]
 
 # System Admin URLs
@@ -55,7 +57,7 @@ system_admin_urlpatterns = [
     path('dashboard/', views.SystemAdminDashboardView.as_view(), name='dashboard'),
     path('users/', views.SystemAdminDashboardView.as_view(), name='users'),  # Same as dashboard
     path('system-config/', views.system_config, name='system_config'),
-    path('reports/', reports_views.system_admin_reports, name='reports'),
+    path('analytics/', reports_views.system_admin_reports, name='analytics'),
     # path('audit-logs/', views.audit_logs, name='audit_logs'),
 ]
 

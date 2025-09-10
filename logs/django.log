@@ -1,1 +1,646 @@
 INFO 2025-09-08 17:32:26,174 autoreload 14013 140684198326336 Watching for file changes with StatReloader
+INFO 2025-09-09 17:54:47,813 autoreload 25630 139738728169536 Watching for file changes with StatReloader
+INFO 2025-09-09 17:55:02,227 basehttp 25630 139738667284160 "GET / HTTP/1.1" 302 0
+INFO 2025-09-09 17:55:02,258 basehttp 25630 139738667284160 "GET /dashboard/ HTTP/1.1" 302 0
+ERROR 2025-09-09 17:55:02,619 log 25630 139738667284160 Internal Server Error: /auth/login/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 415, in login_view
+    return render(request, 'auth/login.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/backends/django.py", line 61, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 175, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/defaulttags.py", line 471, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/resolvers.py", line 828, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'password_reset' not found. 'password_reset' is not a valid view function or pattern name.
+ERROR 2025-09-09 17:55:02,623 basehttp 25630 139738667284160 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 500 129433
+WARNING 2025-09-09 17:55:03,147 log 25630 139738667284160 Not Found: /favicon.ico
+WARNING 2025-09-09 17:55:03,149 basehttp 25630 139738667284160 "GET /favicon.ico HTTP/1.1" 404 3697
+INFO 2025-09-09 17:57:14,203 autoreload 25630 139738728169536 /home/codex/Desktop/project/canteen_project/settings.py changed, reloading.
+INFO 2025-09-09 17:57:15,494 autoreload 25752 139744797065280 Watching for file changes with StatReloader
+INFO 2025-09-09 17:57:18,869 autoreload 25752 139744797065280 /home/codex/Desktop/project/canteen_project/settings.py changed, reloading.
+INFO 2025-09-09 17:57:20,215 autoreload 25772 139782086885440 Watching for file changes with StatReloader
+INFO 2025-09-09 17:58:14,519 autoreload 25772 139782086885440 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-09 17:58:15,724 autoreload 25799 140048210485312 Watching for file changes with StatReloader
+INFO 2025-09-09 17:58:20,326 autoreload 25799 140048210485312 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-09 17:58:21,239 autoreload 25820 140438330306624 Watching for file changes with StatReloader
+ERROR 2025-09-09 17:58:32,086 log 25820 140438268802752 Internal Server Error: /auth/login/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 422, in login_view
+    return render(request, 'auth/login.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/backends/django.py", line 61, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 175, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/defaulttags.py", line 471, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/resolvers.py", line 828, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'password_reset' not found. 'password_reset' is not a valid view function or pattern name.
+ERROR 2025-09-09 17:58:32,100 basehttp 25820 140438268802752 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 500 130018
+INFO 2025-09-09 18:03:10,225 autoreload 25820 140438330306624 /home/codex/Desktop/project/canteen_project/urls.py changed, reloading.
+INFO 2025-09-09 18:03:11,488 autoreload 26053 139952450011200 Watching for file changes with StatReloader
+INFO 2025-09-09 18:03:16,142 autoreload 26053 139952450011200 /home/codex/Desktop/project/canteen_project/urls.py changed, reloading.
+INFO 2025-09-09 18:03:17,366 autoreload 26073 140653894361152 Watching for file changes with StatReloader
+INFO 2025-09-09 18:03:22,948 autoreload 26073 140653894361152 /home/codex/Desktop/project/canteen_project/urls.py changed, reloading.
+INFO 2025-09-09 18:03:23,750 autoreload 26093 140548232872000 Watching for file changes with StatReloader
+INFO 2025-09-09 18:08:57,263 autoreload 26093 140548232872000 /home/codex/Desktop/project/canteen_project/settings.py changed, reloading.
+INFO 2025-09-09 18:08:58,547 autoreload 26510 140586350706752 Watching for file changes with StatReloader
+INFO 2025-09-09 18:09:01,482 autoreload 26510 140586350706752 /home/codex/Desktop/project/canteen_project/settings.py changed, reloading.
+INFO 2025-09-09 18:09:02,517 autoreload 26535 139830977585216 Watching for file changes with StatReloader
+INFO 2025-09-09 18:15:18,268 autoreload 26535 139830977585216 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-09 18:15:19,931 autoreload 26964 140460721233984 Watching for file changes with StatReloader
+INFO 2025-09-09 18:15:21,478 autoreload 26964 140460721233984 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-09 18:15:22,599 autoreload 26966 140169507962944 Watching for file changes with StatReloader
+INFO 2025-09-09 18:16:14,503 autoreload 26966 140169507962944 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-09 18:16:15,287 autoreload 27035 140118489432128 Watching for file changes with StatReloader
+INFO 2025-09-09 18:21:43,075 autoreload 27035 140118489432128 /home/codex/Desktop/project/canteen_project/urls.py changed, reloading.
+INFO 2025-09-09 18:21:44,493 autoreload 27174 139791054864448 Watching for file changes with StatReloader
+INFO 2025-09-09 18:21:58,723 autoreload 27174 139791054864448 /home/codex/Desktop/project/canteen_project/urls.py changed, reloading.
+INFO 2025-09-09 18:21:59,855 autoreload 27258 140302280392768 Watching for file changes with StatReloader
+ERROR 2025-09-09 18:22:08,122 log 27258 140302153152192 Internal Server Error: /auth/login/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 425, in login_view
+    return render(request, 'auth/login.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/backends/django.py", line 61, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 175, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/defaulttags.py", line 471, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/resolvers.py", line 828, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'contact_admin_reset' not found. 'contact_admin_reset' is not a valid view function or pattern name.
+ERROR 2025-09-09 18:22:08,136 basehttp 27258 140302153152192 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 500 130144
+INFO 2025-09-09 18:27:24,302 autoreload 27258 140302280392768 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-09 18:27:25,301 autoreload 27450 139961630031936 Watching for file changes with StatReloader
+ERROR 2025-09-09 18:27:42,023 log 27450 139961502267072 Internal Server Error: /auth/login/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 426, in login_view
+    return render(request, 'auth/login.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/backends/django.py", line 61, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 175, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/defaulttags.py", line 471, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/resolvers.py", line 828, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'contact_admin_reset' not found. 'contact_admin_reset' is not a valid view function or pattern name.
+ERROR 2025-09-09 18:27:42,037 basehttp 27450 139961502267072 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 500 130144
+INFO 2025-09-10 08:05:23,344 autoreload 104451 139641315094592 Watching for file changes with StatReloader
+INFO 2025-09-10 08:05:41,125 basehttp 104451 139641186416320 "GET / HTTP/1.1" 302 0
+INFO 2025-09-10 08:05:41,154 basehttp 104451 139641186416320 "GET /dashboard/ HTTP/1.1" 302 0
+ERROR 2025-09-10 08:05:41,320 log 104451 139641186416320 Internal Server Error: /auth/login/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 426, in login_view
+    return render(request, 'auth/login.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/backends/django.py", line 61, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 175, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/defaulttags.py", line 471, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/resolvers.py", line 828, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'contact_admin_reset' not found. 'contact_admin_reset' is not a valid view function or pattern name.
+ERROR 2025-09-10 08:05:41,326 basehttp 104451 139641186416320 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 500 130007
+INFO 2025-09-10 08:07:18,267 autoreload 104451 139641315094592 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-10 08:07:19,795 autoreload 104510 140426001612864 Watching for file changes with StatReloader
+INFO 2025-09-10 08:07:26,976 autoreload 104510 140426001612864 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-10 08:07:27,895 autoreload 104530 140572581625920 Watching for file changes with StatReloader
+ERROR 2025-09-10 08:07:34,519 log 104530 140572521133760 Internal Server Error: /auth/login/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 426, in login_view
+    return render(request, 'auth/login.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/backends/django.py", line 61, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 175, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/defaulttags.py", line 471, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/urls/resolvers.py", line 828, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'contact_admin_reset' not found. 'contact_admin_reset' is not a valid view function or pattern name.
+ERROR 2025-09-10 08:07:34,549 basehttp 104530 140572521133760 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 500 130144
+INFO 2025-09-10 08:16:07,827 autoreload 104530 140572581625920 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-10 08:16:08,883 autoreload 104802 139634090147904 Watching for file changes with StatReloader
+INFO 2025-09-10 08:16:13,309 autoreload 104802 139634090147904 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-10 08:16:14,415 autoreload 104824 139978238591040 Watching for file changes with StatReloader
+INFO 2025-09-10 08:16:17,933 autoreload 104824 139978238591040 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-10 08:16:18,908 autoreload 104844 140558185988160 Watching for file changes with StatReloader
+INFO 2025-09-10 08:16:22,083 autoreload 104844 140558185988160 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-10 08:16:23,444 autoreload 104864 140307357827136 Watching for file changes with StatReloader
+INFO 2025-09-10 08:16:46,450 basehttp 104864 140307296417472 "GET / HTTP/1.1" 302 0
+INFO 2025-09-10 08:16:46,505 basehttp 104864 140307296417472 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-10 08:16:46,586 basehttp 104864 140307296417472 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 200 23904
+ERROR 2025-09-10 08:17:46,154 log 104864 140307296417472 Internal Server Error: /auth/login/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/retry.py", line 105, in call_with_retry
+    return do()
+           ^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/connection.py", line 803, in _connect
+    raise err
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/connection.py", line 787, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 368, in login_view
+    login(request, user)
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/__init__.py", line 118, in login
+    request.session.cycle_key()
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/sessions/backends/base.py", line 304, in cycle_key
+    self.create()
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/sessions/backends/cache.py", line 42, in create
+    self._session_key = self._get_new_session_key()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/sessions/backends/base.py", line 150, in _get_new_session_key
+    if not self.exists(session_key):
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/sessions/backends/cache.py", line 73, in exists
+    bool(session_key) and (self.cache_key_prefix + session_key) in self._cache
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/cache/backends/base.py", line 299, in __contains__
+    return self.has_key(key)
+           ^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/cache/backends/redis.py", line 210, in has_key
+    return self._cache.has_key(key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/cache/backends/redis.py", line 130, in has_key
+    return bool(client.exists(key))
+                ^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/commands/core.py", line 1736, in exists
+    return self.execute_command("EXISTS", *names, keys=names)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/connection.py", line 1533, in get_connection
+    connection.connect()
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/redis/connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:6379. Connection refused.
+ERROR 2025-09-10 08:17:46,172 basehttp 104864 140307296417472 "POST /auth/login/?next=/dashboard/ HTTP/1.1" 500 164450
+INFO 2025-09-10 08:23:22,679 basehttp 104864 140307296417472 "POST /auth/login/?next=/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-10 08:23:22,740 basehttp 104864 140307296417472 "GET /dashboard/ HTTP/1.1" 302 0
+ERROR 2025-09-10 08:23:23,061 log 104864 140307296417472 Internal Server Error: /employee/dashboard/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 135, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 143, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 226, in get
+    context = self.get_context_data(**kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 113, in get_context_data
+    recent_notifications = UserNotification.objects.filter(
+                           ^^^^^^^^^^^^^^^^
+NameError: name 'UserNotification' is not defined
+ERROR 2025-09-10 08:23:23,064 basehttp 104864 140307296417472 "GET /employee/dashboard/ HTTP/1.1" 500 99064
+INFO 2025-09-10 08:28:45,666 autoreload 104864 140307357827136 /home/codex/Desktop/project/canteen_project/settings.py changed, reloading.
+INFO 2025-09-10 08:29:36,481 autoreload 105414 140670405050432 Watching for file changes with StatReloader
+INFO 2025-09-10 08:29:50,513 basehttp 105414 140670343837376 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-10 08:30:05,184 basehttp 105414 140670343837376 "GET / HTTP/1.1" 302 0
+INFO 2025-09-10 08:30:05,210 basehttp 105414 140670343837376 "GET /dashboard/ HTTP/1.1" 302 0
+ERROR 2025-09-10 08:30:05,413 log 105414 140670343837376 Internal Server Error: /employee/dashboard/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 135, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 143, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 226, in get
+    context = self.get_context_data(**kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 113, in get_context_data
+    recent_notifications = UserNotification.objects.filter(
+                           ^^^^^^^^^^^^^^^^
+NameError: name 'UserNotification' is not defined
+ERROR 2025-09-10 08:30:05,418 basehttp 105414 140670343837376 "GET /employee/dashboard/ HTTP/1.1" 500 98748
+INFO 2025-09-10 08:30:11,307 basehttp 105414 140670343837376 "GET / HTTP/1.1" 302 0
+INFO 2025-09-10 08:30:11,369 basehttp 105414 140670343837376 "GET /dashboard/ HTTP/1.1" 302 0
+ERROR 2025-09-10 08:30:11,490 log 105414 140670343837376 Internal Server Error: /employee/dashboard/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 135, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 143, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 226, in get
+    context = self.get_context_data(**kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 113, in get_context_data
+    recent_notifications = UserNotification.objects.filter(
+                           ^^^^^^^^^^^^^^^^
+NameError: name 'UserNotification' is not defined
+ERROR 2025-09-10 08:30:11,492 basehttp 105414 140670343837376 "GET /employee/dashboard/ HTTP/1.1" 500 99022
+INFO 2025-09-10 08:30:11,507 basehttp 105414 140670343837376 - Broken pipe from ('127.0.0.1', 55004)
+INFO 2025-09-10 08:30:15,194 basehttp 105414 140670335444672 "GET /auth/login/?next=/dashboard/ HTTP/1.1" 302 0
+ERROR 2025-09-10 08:30:15,284 log 105414 140670335444672 Internal Server Error: /employee/dashboard/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 135, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 143, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 226, in get
+    context = self.get_context_data(**kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 113, in get_context_data
+    recent_notifications = UserNotification.objects.filter(
+                           ^^^^^^^^^^^^^^^^
+NameError: name 'UserNotification' is not defined
+ERROR 2025-09-10 08:30:15,288 basehttp 105414 140670335444672 "GET /employee/dashboard/ HTTP/1.1" 500 98748
+INFO 2025-09-10 08:30:29,735 autoreload 105463 140540966826048 Watching for file changes with StatReloader
+INFO 2025-09-10 08:31:00,458 basehttp 105463 140540905518784 "GET / HTTP/1.1" 302 0
+INFO 2025-09-10 08:31:00,503 basehttp 105463 140540905518784 "GET /dashboard/ HTTP/1.1" 302 0
+ERROR 2025-09-10 08:31:00,663 log 105463 140540905518784 Internal Server Error: /employee/dashboard/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 135, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 143, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 226, in get
+    context = self.get_context_data(**kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 113, in get_context_data
+    recent_notifications = UserNotification.objects.filter(
+                           ^^^^^^^^^^^^^^^^
+NameError: name 'UserNotification' is not defined
+ERROR 2025-09-10 08:31:00,666 basehttp 105463 140540905518784 "GET /employee/dashboard/ HTTP/1.1" 500 98748
+INFO 2025-09-10 08:33:58,501 autoreload 105463 140540966826048 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-10 08:33:59,760 autoreload 105585 140130218541120 Watching for file changes with StatReloader
+INFO 2025-09-10 08:34:01,891 autoreload 105585 140130218541120 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-10 08:34:03,491 autoreload 105605 140263209074752 Watching for file changes with StatReloader
+INFO 2025-09-10 08:34:07,136 autoreload 105605 140263209074752 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-10 08:34:08,578 autoreload 105626 140125665329216 Watching for file changes with StatReloader
+INFO 2025-09-10 08:36:14,144 autoreload 105626 140125665329216 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-10 08:36:15,105 autoreload 105703 140000252715072 Watching for file changes with StatReloader
+INFO 2025-09-10 08:37:57,722 autoreload 105784 139632898273344 Watching for file changes with StatReloader
+INFO 2025-09-10 08:40:58,571 autoreload 105784 139632898273344 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-10 08:40:59,551 autoreload 105962 140703096561728 Watching for file changes with StatReloader
+INFO 2025-09-10 08:41:16,960 autoreload 105962 140703096561728 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-10 08:41:17,955 autoreload 105984 140498259206208 Watching for file changes with StatReloader
+INFO 2025-09-10 08:41:26,832 autoreload 105984 140498259206208 /home/codex/Desktop/project/apps/authentication/views.py changed, reloading.
+INFO 2025-09-10 08:41:28,079 autoreload 106004 140255612919872 Watching for file changes with StatReloader
+ERROR 2025-09-10 08:42:05,046 log 106004 140255551289024 Internal Server Error: /employee/dashboard/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/mysql/base.py", line 75, in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/MySQLdb/cursors.py", line 179, in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/MySQLdb/cursors.py", line 330, in _query
+    db.query(q)
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/MySQLdb/connections.py", line 255, in query
+    _mysql.connection.query(self, query)
+MySQLdb.OperationalError: (1054, "Unknown column 'notifications_notification.is_read' in 'WHERE'")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/mixins.py", line 135, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 143, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/views/generic/base.py", line 226, in get
+    context = self.get_context_data(**kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/authentication/views.py", line 122, in get_context_data
+    ).count()
+      ^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/models/query.py", line 608, in count
+    return self.query.get_count(using=self.db)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/models/sql/query.py", line 568, in get_count
+    return obj.get_aggregation(using, {"__count": Count("*")})["__count"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/models/sql/query.py", line 554, in get_aggregation
+    result = compiler.execute_sql(SINGLE)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/utils.py", line 102, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/utils.py", line 67, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/utils.py", line 80, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/utils.py", line 84, in _execute
+    with self.db.wrap_database_errors:
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/utils.py", line 89, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/db/backends/mysql/base.py", line 75, in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/MySQLdb/cursors.py", line 179, in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/MySQLdb/cursors.py", line 330, in _query
+    db.query(q)
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/MySQLdb/connections.py", line 255, in query
+    _mysql.connection.query(self, query)
+django.db.utils.OperationalError: (1054, "Unknown column 'notifications_notification.is_read' in 'WHERE'")
+ERROR 2025-09-10 08:42:05,072 basehttp 106004 140255551289024 "GET /employee/dashboard/ HTTP/1.1" 500 189124

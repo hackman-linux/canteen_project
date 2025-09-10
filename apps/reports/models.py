@@ -454,4 +454,21 @@ class ReportSubscription(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     report_type = models.CharField(max_length=50, choices=Report.REPORT_TYPES)
-    frequency = models.CharField(max_length=20, choices=FREQUENCY_
+    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES)  # ✅ completed here
+    recipients = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="report_subscriptions"
+    )
+    is_active = models.BooleanField(default=True)
+    last_sent_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "report_subscription"
+        verbose_name = "Report Subscription"
+        verbose_name_plural = "Report Subscriptions"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name} ({self.frequency})"

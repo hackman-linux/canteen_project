@@ -66,6 +66,17 @@ def report_details(request, report_id):
     report = get_object_or_404(Report, id=report_id)
     return render(request, 'reports/details.html', {'report': report})
 
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def user_activity_report(request):
+    """
+    Display a report of user activity.
+    """
+    return render(request, "system_admin/report.html")
+
+
 
 @login_required
 def download_report(request, report_id):
@@ -192,6 +203,38 @@ def generate_customer_analytics_csv(report_data, start_date, end_date):
     for customer in report_data['top_customers']:
         writer.writerow([customer['name'], customer['email'], customer['orders_count'], customer['total_spent'], customer['avg_order_value'], customer['wallet_balance']])
     return response
+
+# ----------------------------------------------------------------------
+# Canteen Admin Reports View (for template rendering)
+# ----------------------------------------------------------------------
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def canteen_admin_reports(request):
+    """
+    Render the Canteen Admin Reports dashboard page.
+    """
+    if not (request.user.is_canteen_admin() or request.user.is_system_admin()):
+        return redirect('dashboard_redirect')
+
+    return render(request, 'canteen_admin/reports.html')
+
+
+# ----------------------------------------------------------------------
+# System Admin Analytics View (for template rendering)
+# ----------------------------------------------------------------------
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def system_admin_reports(request):
+    """
+    Render the System Admin Analytics dashboard page.
+    """
+    if not request.user.is_system_admin():
+        return redirect('dashboard_redirect')
+
+    return render(request, 'system_admin/analytics.html')
+
 
 # ----------------------------------------------------------------------
 # Note: All report generators are now standardized and arranged properly.

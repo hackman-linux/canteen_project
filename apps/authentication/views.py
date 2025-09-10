@@ -19,25 +19,36 @@ from .models import User, UserActivity
 from apps.orders.models import Order, OrderItem
 from apps.menu.models import MenuItem, MenuCategory
 from apps.payments.models import Payment, WalletTransaction
-from apps.notifications.models import Notification, UserNotification
+from apps.notifications.models import Notification
 
-# def login_view(request):
-#     if request.method == "POST":
-#         username = request.POST.get("username")
-#         password = request.POST.get("password")
-#         user = authenticate(request, username=username, password=password)
+def login_view(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        remember_me = request.POST.get("remember_me")  # will be "on" if checked
 
-#         if user is not None:
-#             login(request, user)
-#             # Redirect to ?next= or dashboard
-#             next_url = request.GET.get("next") or request.POST.get("next")
-#             if next_url:
-#                 return redirect(next_url)
-#             return redirect("dashboard")
-#         else:
-#             messages.error(request, "Invalid username or password")
+        user = authenticate(request, username=username, password=password)
 
-#     return render(request, "auth/login.html")
+        if user is not None:
+            login(request, user)
+
+            if remember_me:
+                # Persistent session (e.g., 2 weeks)
+                request.session.set_expiry(1209600)  # 2 weeks in seconds
+            else:
+                # Session ends when browser closes
+                request.session.set_expiry(0)
+
+            return redirect("dashboard")  # or wherever you want
+        else:
+            messages.error(request, "Invalid username or password")
+
+    return render(request, "auth/login.html")
+
+def contact_admin_reset(request):
+    # Simple page telling user to contact system admin
+    return render(request, "auth/contact_admin_reset.html")
+
 
 
 
@@ -99,13 +110,13 @@ class EmployeeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context['todays_specials'] = todays_specials
         
         # Recent notifications
-        recent_notifications = UserNotification.objects.filter(
+        recent_notifications = Notification.objects.filter(
             user=user
         ).select_related('notification').order_by('-created_at')[:5]
         context['recent_notifications'] = recent_notifications
         
         # Unread notifications count
-        unread_notifications = UserNotification.objects.filter(
+        unread_notifications = Notification.objects.filter(
             user=user,
             is_read=False
         ).count()

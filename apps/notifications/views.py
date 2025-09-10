@@ -14,11 +14,10 @@ from django.utils.html import strip_tags
 import json
 import logging
 
-from .models import Notification, UserNotification, NotificationTemplate, NotificationPreference
+from .models import Notification
 from apps.authentication.models import User
 
 logger = logging.getLogger(__name__)
-
 
 @login_required
 def notifications_list(request):

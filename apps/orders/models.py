@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -8,9 +8,28 @@ import uuid
 class Order(models.Model):
     """Main order model"""
     
-    STATUS_CHOICES = settings.CANTEEN_SETTINGS['ORDER_STATUSES']
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('preparing', 'Preparing'),
+        ('ready', 'Ready'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
     
-    DELIVERY_CHOICES = settings.CANTEEN_SETTINGS['DELIVERY_TIMES']
+    DELIVERY_CHOICES = [
+        ('08:00', '8:00 AM'),
+        ('08:30', '8:30 AM'),
+        ('09:00', '9:00 AM'),
+        ('12:00', '12:00 PM'),
+        ('12:30', '12:30 PM'),
+        ('13:00', '1:00 PM'),
+        ('13:30', '1:30 PM'),
+        ('14:00', '2:00 PM'),
+        ('17:00', '5:00 PM'),
+        ('17:30', '5:30 PM'),
+        ('18:00', '6:00 PM'),
+    ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_number = models.CharField(max_length=20, unique=True, db_index=True)
@@ -81,7 +100,7 @@ class Order(models.Model):
     customer_rating = models.PositiveIntegerField(
         blank=True,
         null=True,
-        validators=[MinValueValidator(1), validators.MaxValueValidator(5)]
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     customer_feedback = models.TextField(blank=True)
     feedback_date = models.DateTimeField(blank=True, null=True)
@@ -179,6 +198,11 @@ class Order(models.Model):
         }
         return status_icons.get(self.status, 'bi-question-circle')
     
+    def get_status_display(self):
+        """Get human-readable status"""
+        status_dict = dict(self.STATUS_CHOICES)
+        return status_dict.get(self.status, self.status)
+    
     def update_status(self, new_status, user=None):
         """Update order status with timestamp tracking"""
         old_status = self.status
@@ -201,7 +225,7 @@ class Order(models.Model):
         elif new_status == 'cancelled':
             self.cancelled_at = now
         
-        if user and user.can_manage_orders():
+        if user and hasattr(user, 'can_manage_orders') and user.can_manage_orders():
             self.prepared_by = user
         
         self.save()
@@ -211,24 +235,29 @@ class Order(models.Model):
     
     def create_status_notification(self, old_status, new_status):
         """Create notification for status change"""
-        from apps.notifications.models import Notification
-        
-        status_messages = {
-            'confirmed': f"Your order #{self.order_number} has been confirmed!",
-            'preparing': f"Your order #{self.order_number} is being prepared.",
-            'ready': f"Your order #{self.order_number} is ready for pickup!",
-            'completed': f"Your order #{self.order_number} has been completed.",
-            'cancelled': f"Your order #{self.order_number} has been cancelled."
-        }
-        
-        if new_status in status_messages:
-            Notification.objects.create(
-                user=self.customer,
-                title='Order Update',
-                message=status_messages[new_status],
-                notification_type='order_status',
-                related_object_id=str(self.id)
-            )
+        try:
+            from apps.notifications.models import Notification
+            
+            status_messages = {
+                'confirmed': f"Your order #{self.order_number} has been confirmed!",
+                'preparing': f"Your order #{self.order_number} is being prepared.",
+                'ready': f"Your order #{self.order_number} is ready for pickup!",
+                'completed': f"Your order #{self.order_number} has been completed.",
+                'cancelled': f"Your order #{self.order_number} has been cancelled."
+            }
+            
+            if new_status in status_messages:
+                Notification.objects.create(
+                    title='Order Update',
+                    message=status_messages[new_status],
+                    notification_type='order_status',
+                    target_audience='specific_user',
+                    target_user=self.customer,
+                    order=self
+                )
+        except ImportError:
+            # Notification model not available yet
+            pass
     
     def get_estimated_ready_time(self):
         """Calculate estimated ready time"""
@@ -448,6 +477,3 @@ class ReorderItem(models.Model):
         self.order_count += 1
         self.last_ordered = timezone.now()
         self.save()
-
-
-from django.core import validators

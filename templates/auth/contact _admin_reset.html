@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <h3>Password Reset Disabled</h3>
+  <p>Password reset is managed by the system administrator.  
+     Please contact the admin for assistance.</p>
+  <a href="{% url 'auth:login' %}" class="btn btn-primary">Back to Login</a>
+</div>
+{% endblock %}
