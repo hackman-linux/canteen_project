@@ -17,7 +17,7 @@ from apps.orders.models import Order, OrderItem
 
 class EmployeeMenuView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """Employee view of available menu items"""
-    template_name = 'menu/employee_menu.html'
+    template_name = 'employee/menu.html'
     
     def test_func(self):
         return self.request.user.is_employee() or self.request.user.is_superuser
@@ -78,9 +78,24 @@ def employee_menu(request):
     return view(request)
 
 
+@login_required
+def menu_view(request):
+    """
+    Basic menu view for employees/customers to browse items.
+    """
+    items = MenuItem.objects.filter(is_available=True).select_related('category')
+    categories = MenuCategory.objects.filter(is_active=True).prefetch_related('menu_items')
+
+    context = {
+        'items': items,
+        'categories': categories,
+    }
+    return render(request, 'menu/menu.html', context)
+
+
 class MenuManagementView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """Canteen admin menu management interface"""
-    template_name = 'menu/management.html'
+    template_name = 'canteen_admin/menu_management.html'
     
     def test_func(self):
         return self.request.user.is_canteen_admin() or self.request.user.is_superuser

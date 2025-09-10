@@ -417,149 +417,51 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Sample Data -->
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar">SG</div>
-                                    <div class="ms-2">
-                                        <div class="fw-bold">Souleman Genie</div>
-                                        <small class="text-muted">ndjodongouhs@gmail.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="activity-badge activity-login">Login</span>
-                            </td>
-                            <td>
-                                <div class="log-details">User logged in successfully</div>
-                            </td>
-                            <td>
-                                <span class="ip-address">192.168.1.100</span>
-                            </td>
-                            <td>
-                                <div class="timestamp">2025-09-07 14:30:25</div>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(1)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar">JD</div>
-                                    <div class="ms-2">
-                                        <div class="fw-bold">John Doe</div>
-                                        <small class="text-muted">john.doe@company.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="activity-badge activity-order_placed">Order Placed</span>
-                            </td>
-                            <td>
-                                <div class="log-details">Placed order #ORD-2025-001234 for lunch</div>
-                            </td>
-                            <td>
-                                <span class="ip-address">192.168.1.105</span>
-                            </td>
-                            <td>
-                                <div class="timestamp">2025-09-07 12:45:10</div>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(2)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar">MS</div>
-                                    <div class="ms-2">
-                                        <div class="fw-bold">Mary Smith</div>
-                                        <small class="text-muted">mary.smith@company.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="activity-badge activity-payment_made">Payment Made</span>
-                            </td>
-                            <td>
-                                <div class="log-details">Payment of 2,500 XAF via MTN Mobile Money</div>
-                            </td>
-                            <td>
-                                <span class="ip-address">192.168.1.110</span>
-                            </td>
-                            <td>
-                                <div class="timestamp">2025-09-07 11:20:33</div>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(3)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar">AD</div>
-                                    <div class="ms-2">
-                                        <div class="fw-bold">Admin User</div>
-                                        <small class="text-muted">admin@company.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="activity-badge activity-admin_action">Admin Action</span>
-                            </td>
-                            <td>
-                                <div class="log-details">Updated menu item pricing for Grilled Chicken</div>
-                            </td>
-                            <td>
-                                <span class="ip-address">192.168.1.200</span>
-                            </td>
-                            <td>
-                                <div class="timestamp">2025-09-07 10:15:42</div>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(4)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar">RJ</div>
-                                    <div class="ms-2">
-                                        <div class="fw-bold">Robert Johnson</div>
-                                        <small class="text-muted">robert.j@company.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="activity-badge activity-profile_updated">Profile Updated</span>
-                            </td>
-                            <td>
-                                <div class="log-details">Updated profile information and phone number</div>
-                            </td>
-                            <td>
-                                <span class="ip-address">192.168.1.115</span>
-                            </td>
-                            <td>
-                                <div class="timestamp">2025-09-07 09:45:18</div>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(5)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
+                   <tbody>
+    {% for log in audit_logs %}
+    <tr>
+        <td>
+            <div class="d-flex align-items-center">
+                <div class="user-avatar">
+                    {{ log.user.first_name|default:log.user.username|slice:":1" }}{{ log.user.last_name|slice:":1" }}
+                </div>
+                <div class="ms-2">
+                    <div class="fw-bold">
+                        {{ log.user.get_full_name|default:log.user.username }}
+                    </div>
+                    <small class="text-muted">{{ log.user.email }}</small>
+                </div>
+            </div>
+        </td>
+        <td>
+            <span class="activity-badge activity-{{ log.activity_type }}">
+                {{ log.activity_type|title }}
+            </span>
+        </td>
+        <td>
+            <div class="log-details">{{ log.description }}</div>
+        </td>
+        <td>
+            <span class="ip-address">{{ log.ip_address }}</span>
+        </td>
+        <td>
+            <div class="timestamp">{{ log.timestamp|date:"Y-m-d H:i:s" }}</div>
+        </td>
+        <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="viewDetails({{ log.id }})">
+                <i class="bi bi-eye"></i>
+            </button>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6" class="text-center text-muted">
+            No audit logs found.
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+
                 </table>
             </div>
         </div>

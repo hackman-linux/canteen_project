@@ -1,0 +1,42 @@
+<!-- templates/orders/partials/order_detail.html -->
+<div class="modal-header">
+  <h5 class="modal-title">Order {{ order.order_number }}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+  <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+  <p><strong>Placed on:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+  <p><strong>Special Instructions:</strong> {{ order.special_instructions|default:"None" }}</p>
+
+  <h6>Items</h6>
+  <ul class="list-group mb-3">
+    {% for item in order.items.all %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ item.menu_item.name }} (x{{ item.quantity }})
+        <span>{{ item.total }} FCFA</span>
+      </li>
+    {% empty %}
+      <li class="list-group-item text-muted">No items in this order.</li>
+    {% endfor %}
+  </ul>
+
+  <div class="d-flex justify-content-between">
+    <span>Subtotal:</span>
+    <span>{{ order.subtotal }} FCFA</span>
+  </div>
+  <div class="d-flex justify-content-between">
+    <span>Service Fee:</span>
+    <span>{{ order.service_fee }} FCFA</span>
+  </div>
+  <div class="d-flex justify-content-between">
+    <span>Tax:</span>
+    <span>{{ order.tax_amount }} FCFA</span>
+  </div>
+  <div class="d-flex justify-content-between fw-bold">
+    <span>Total:</span>
+    <span>{{ order.total_amount }} FCFA</span>
+  </div>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+</div>

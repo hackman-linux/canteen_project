@@ -1,479 +1,203 @@
-from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.conf import settings
-from django.utils import timezone
-from datetime import datetime, timedelta
+
 import uuid
+from decimal import Decimal
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
+
+
+def generate_order_number():
+    """Simple readable order number generator (falls back to uuid4 hex)."""
+    return uuid.uuid4().hex[:12].upper()
+
 
 class Order(models.Model):
-    """Main order model"""
-    
+    """Main order placed by an employee."""
+
+    STATUS_PENDING = "PENDING"
+    STATUS_VALIDATED = "VALIDATED"
+    STATUS_CANCELLED = "CANCELLED"
+    STATUS_PAID = "PAID"
+
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('preparing', 'Preparing'),
-        ('ready', 'Ready'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
+        (STATUS_PENDING, "Pending"),
+        (STATUS_VALIDATED, "Validated"),
+        (STATUS_CANCELLED, "Cancelled"),
+        (STATUS_PAID, "Paid"),
     ]
-    
-    DELIVERY_CHOICES = [
-        ('08:00', '8:00 AM'),
-        ('08:30', '8:30 AM'),
-        ('09:00', '9:00 AM'),
-        ('12:00', '12:00 PM'),
-        ('12:30', '12:30 PM'),
-        ('13:00', '1:00 PM'),
-        ('13:30', '1:30 PM'),
-        ('14:00', '2:00 PM'),
-        ('17:00', '5:00 PM'),
-        ('17:30', '5:30 PM'),
-        ('18:00', '6:00 PM'),
+
+    PAYMENT_WALLET = "wallet"
+    PAYMENT_MTN = "mtn_momo"
+    PAYMENT_ORANGE = "orange_money"
+
+    PAYMENT_METHOD_CHOICES = [
+        (PAYMENT_WALLET, "Wallet"),
+        (PAYMENT_MTN, "MTN Mobile Money"),
+        (PAYMENT_ORANGE, "Orange Money"),
     ]
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    order_number = models.CharField(max_length=20, unique=True, db_index=True)
-    
-    # Customer information
-    customer = models.ForeignKey(
+    order_number = models.CharField(max_length=32, unique=True, default=generate_order_number)
+
+    # Who placed the order
+    employee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='orders'
+        related_name="orders",
     )
-    
-    # Order details
-    status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES, 
-        default='pending'
-    )
-    delivery_time = models.CharField(
-        max_length=10,
-        choices=DELIVERY_CHOICES,
-        help_text="Preferred delivery time"
-    )
-    delivery_date = models.DateField(default=timezone.now)
-    
-    # Pricing
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    
-    # Special requests and notes
+
+    # Contact info (captured at checkout)
+    full_name = models.CharField(max_length=255, blank=False, null=False, default="Souleman G")
+    email = models.EmailField(max_length=255, blank=False, null=False, default="ndjodongouhs@gmail.com")
+    phone_number = models.CharField(max_length=50, blank=False, null=False, default='+237 688 582 648')
+    office_number = models.CharField(max_length=50, blank=True)
+
+    # Order summary fields (stored for auditing — also recalculated via calculate_totals())
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    service_fee = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+
+    # Optional notes
     special_instructions = models.TextField(blank=True)
-    internal_notes = models.TextField(
-        blank=True,
-        help_text="Internal notes for canteen staff"
-    )
-    
+
+    # Status & payment
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    payment_method = models.CharField(max_length=30, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    confirmed_at = models.DateTimeField(blank=True, null=True)
-    prepared_at = models.DateTimeField(blank=True, null=True)
-    ready_at = models.DateTimeField(blank=True, null=True)
-    completed_at = models.DateTimeField(blank=True, null=True)
+    validated_at = models.DateTimeField(blank=True, null=True)
+    paid_at = models.DateTimeField(blank=True, null=True)
     cancelled_at = models.DateTimeField(blank=True, null=True)
-    
-    # Staff assignments
-    prepared_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='prepared_orders'
-    )
-    
-    # Estimated times
-    estimated_prep_time = models.PositiveIntegerField(
-        default=15,
-        help_text="Estimated preparation time in minutes"
-    )
-    actual_prep_time = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text="Actual preparation time in minutes"
-    )
-    
-    # Ratings and feedback
-    customer_rating = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
-    )
-    customer_feedback = models.TextField(blank=True)
-    feedback_date = models.DateTimeField(blank=True, null=True)
-    
+
     class Meta:
-        db_table = 'order'
-        verbose_name = 'Order'
-        verbose_name_plural = 'Orders'
-        ordering = ['-created_at']
+        db_table = "orders_order"
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['order_number']),
-            models.Index(fields=['customer', 'status']),
-            models.Index(fields=['status', 'delivery_date']),
-            models.Index(fields=['delivery_date', 'delivery_time']),
-            models.Index(fields=['created_at']),
+            models.Index(fields=["employee", "created_at"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["order_number"]),
         ]
-    
+
     def __str__(self):
-        return f"Order #{self.order_number} - {self.customer.get_short_name()}"
-    
-    def save(self, *args, **kwargs):
-        if not self.order_number:
-            self.order_number = self.generate_order_number()
-        super().save(*args, **kwargs)
-    
-    def generate_order_number(self):
-        """Generate unique order number"""
-        today = timezone.now()
-        date_str = today.strftime("%Y%m%d")
-        
-        # Get last order number for today
-        last_order = Order.objects.filter(
-            order_number__startswith=f"ORD{date_str}"
-        ).order_by('-order_number').first()
-        
-        if last_order:
-            last_number = int(last_order.order_number[-3:])
-            new_number = last_number + 1
-        else:
-            new_number = 1
-        
-        return f"ORD{date_str}{new_number:03d}"
-    
-    def calculate_totals(self):
-        """Calculate order totals"""
-        items_total = self.items.aggregate(
-            total=models.Sum(
-                models.F('quantity') * models.F('unit_price'),
-                output_field=models.DecimalField()
-            )
-        )['total'] or 0
-        
-        self.subtotal = items_total
-        self.tax_amount = 0  # No tax in this implementation
-        self.total_amount = self.subtotal - self.discount_amount
-        self.save(update_fields=['subtotal', 'tax_amount', 'total_amount'])
-    
-    def can_be_cancelled(self):
-        """Check if order can be cancelled"""
-        if self.status in ['completed', 'cancelled']:
-            return False
-        
-        # Allow cancellation up to 30 minutes before delivery time
-        if self.delivery_date == timezone.now().date():
-            delivery_datetime = datetime.combine(
-                self.delivery_date,
-                datetime.strptime(self.delivery_time, '%H:%M').time()
-            )
-            cutoff_time = delivery_datetime - timedelta(minutes=30)
-            return timezone.now() < timezone.make_aware(cutoff_time)
-        
-        return True
-    
-    def get_status_color(self):
-        """Get Bootstrap color class for order status"""
-        status_colors = {
-            'pending': 'warning',
-            'confirmed': 'info',
-            'preparing': 'primary',
-            'ready': 'success',
-            'completed': 'success',
-            'cancelled': 'danger'
+        return f"{self.order_number} — {self.get_status_display()}"
+
+    def calculate_totals(self, save=False):
+        """Recalculate subtotal / tax / total from items. Call after creating items."""
+        subtotal = Decimal("0.00")
+        for item in self.items.all():
+            # item.unit_price should be stored on item.save()
+            subtotal += (item.unit_price or Decimal("0.00")) * item.quantity
+
+        # Basic tax/service calculation placeholders — adjust to your rules
+        service_fee = (subtotal * Decimal("0.00"))  # set to non-zero if needed
+        tax_amount = (subtotal * Decimal("0.00"))  # set VAT / tax logic here
+        total = subtotal + service_fee + tax_amount
+
+        self.subtotal = subtotal.quantize(Decimal("0.01"))
+        self.service_fee = service_fee.quantize(Decimal("0.01"))
+        self.tax_amount = tax_amount.quantize(Decimal("0.01"))
+        self.total_amount = total.quantize(Decimal("0.01"))
+
+        if save:
+            self.save()
+
+        return {
+            "subtotal": self.subtotal,
+            "service_fee": self.service_fee,
+            "tax_amount": self.tax_amount,
+            "total_amount": self.total_amount,
         }
-        return status_colors.get(self.status, 'secondary')
-    
-    def get_status_icon(self):
-        """Get Bootstrap icon for order status"""
-        status_icons = {
-            'pending': 'bi-clock',
-            'confirmed': 'bi-check-circle',
-            'preparing': 'bi-gear',
-            'ready': 'bi-bell',
-            'completed': 'bi-check2-all',
-            'cancelled': 'bi-x-circle'
-        }
-        return status_icons.get(self.status, 'bi-question-circle')
-    
-    def get_status_display(self):
-        """Get human-readable status"""
-        status_dict = dict(self.STATUS_CHOICES)
-        return status_dict.get(self.status, self.status)
-    
-    def update_status(self, new_status, user=None):
-        """Update order status with timestamp tracking"""
-        old_status = self.status
-        self.status = new_status
-        
-        now = timezone.now()
-        
-        if new_status == 'confirmed' and old_status == 'pending':
-            self.confirmed_at = now
-        elif new_status == 'preparing' and old_status == 'confirmed':
-            self.prepared_at = now
-        elif new_status == 'ready' and old_status == 'preparing':
-            self.ready_at = now
-            # Calculate actual prep time
-            if self.prepared_at:
-                prep_time = (now - self.prepared_at).total_seconds() / 60
-                self.actual_prep_time = int(prep_time)
-        elif new_status == 'completed' and old_status == 'ready':
-            self.completed_at = now
-        elif new_status == 'cancelled':
-            self.cancelled_at = now
-        
-        if user and hasattr(user, 'can_manage_orders') and user.can_manage_orders():
-            self.prepared_by = user
-        
-        self.save()
-        
-        # Create status update notification
-        self.create_status_notification(old_status, new_status)
-    
-    def create_status_notification(self, old_status, new_status):
-        """Create notification for status change"""
-        try:
-            from apps.notifications.models import Notification
-            
-            status_messages = {
-                'confirmed': f"Your order #{self.order_number} has been confirmed!",
-                'preparing': f"Your order #{self.order_number} is being prepared.",
-                'ready': f"Your order #{self.order_number} is ready for pickup!",
-                'completed': f"Your order #{self.order_number} has been completed.",
-                'cancelled': f"Your order #{self.order_number} has been cancelled."
-            }
-            
-            if new_status in status_messages:
-                Notification.objects.create(
-                    title='Order Update',
-                    message=status_messages[new_status],
-                    notification_type='order_status',
-                    target_audience='specific_user',
-                    target_user=self.customer,
-                    order=self
-                )
-        except ImportError:
-            # Notification model not available yet
-            pass
-    
-    def get_estimated_ready_time(self):
-        """Calculate estimated ready time"""
-        if self.confirmed_at:
-            return self.confirmed_at + timedelta(minutes=self.estimated_prep_time)
-        return None
-    
-    def is_delayed(self):
-        """Check if order is delayed"""
-        if self.status not in ['preparing', 'ready'] or not self.confirmed_at:
-            return False
-        
-        estimated_time = self.get_estimated_ready_time()
-        return timezone.now() > estimated_time
-    
-    def get_items_count(self):
-        """Get total items count in order"""
-        return self.items.aggregate(
-            total=models.Sum('quantity')
-        )['total'] or 0
 
 
 class OrderItem(models.Model):
-    """Individual items within an order"""
-    
+    """Individual line item in an order."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    order = models.ForeignKey(
-        Order,
-        on_delete=models.CASCADE,
-        related_name='items'
-    )
-    menu_item = models.ForeignKey(
-        'menu.MenuItem',
-        on_delete=models.CASCADE,
-        related_name='order_items'
-    )
-    
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
-    unit_price = models.DecimalField(max_digits=8, decimal_places=2)
-    total_price = models.DecimalField(max_digits=8, decimal_places=2)
-    
-    # Customizations
-    special_instructions = models.TextField(blank=True)
-    customizations = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Item customizations like spice level, extras, etc."
-    )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    menu_item = models.ForeignKey("menu.MenuItem", on_delete=models.PROTECT, related_name="order_items")
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+
     class Meta:
-        db_table = 'order_item'
-        verbose_name = 'Order Item'
-        verbose_name_plural = 'Order Items'
-        ordering = ['id']
-        indexes = [
-            models.Index(fields=['order']),
-            models.Index(fields=['menu_item']),
-        ]
-    
+        db_table = "orders_orderitem"
+        ordering = ["-id"]
+
     def __str__(self):
-        return f"{self.quantity}x {self.menu_item.name} - {self.order.order_number}"
-    
+        return f"{self.menu_item.name} x {self.quantity}"
+
+    @property
+    def total(self):
+        return (self.unit_price or Decimal("0.00")) * self.quantity
+
     def save(self, *args, **kwargs):
-        if not self.unit_price:
-            self.unit_price = self.menu_item.get_display_price()
-        
-        self.total_price = self.quantity * self.unit_price
+        # Snapshot the menu item price at ordering time
+        if not self.unit_price and hasattr(self.menu_item, "price"):
+            self.unit_price = self.menu_item.price
         super().save(*args, **kwargs)
-        
-        # Update order totals
-        self.order.calculate_totals()
-    
-    def get_customizations_display(self):
-        """Get formatted customizations for display"""
-        if not self.customizations:
-            return ""
-        
-        display_items = []
-        for key, value in self.customizations.items():
-            if value:
-                display_items.append(f"{key.replace('_', ' ').title()}: {value}")
-        
-        return ", ".join(display_items)
 
 
 class OrderQueue(models.Model):
-    """Queue management for order preparation"""
-    
-    PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('normal', 'Normal'),
-        ('high', 'High'),
-        ('urgent', 'Urgent'),
-    ]
-    
-    order = models.OneToOneField(
-        Order,
-        on_delete=models.CASCADE,
-        related_name='queue_item'
-    )
+    """Optional queue model for kitchen / canteen admins to reorder processing."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="queue_entry")
     queue_position = models.PositiveIntegerField(default=0)
-    priority = models.CharField(
-        max_length=10, 
-        choices=PRIORITY_CHOICES, 
-        default='normal'
-    )
-    
-    estimated_start_time = models.DateTimeField(blank=True, null=True)
-    actual_start_time = models.DateTimeField(blank=True, null=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
-        db_table = 'order_queue'
-        verbose_name = 'Order Queue Item'
-        verbose_name_plural = 'Order Queue Items'
-        ordering = ['priority', 'queue_position', 'created_at']
-    
+        db_table = "orders_orderqueue"
+        ordering = ["queue_position", "-created_at"]
+        indexes = [models.Index(fields=["queue_position", "created_at"])]
+
     def __str__(self):
-        return f"Queue #{self.queue_position} - {self.order.order_number}"
-    
-    def move_up(self):
-        """Move order up in queue"""
-        if self.queue_position > 1:
-            # Swap with previous item
-            previous_item = OrderQueue.objects.filter(
-                queue_position=self.queue_position - 1
-            ).first()
-            
-            if previous_item:
-                previous_item.queue_position += 1
-                previous_item.save()
-                
-                self.queue_position -= 1
-                self.save()
-    
-    def move_down(self):
-        """Move order down in queue"""
-        next_item = OrderQueue.objects.filter(
-            queue_position=self.queue_position + 1
-        ).first()
-        
-        if next_item:
-            next_item.queue_position -= 1
-            next_item.save()
-            
-            self.queue_position += 1
-            self.save()
+        return f"Queue #{self.queue_position} — {self.order.order_number}"
 
 
 class OrderHistory(models.Model):
-    """Track order status changes and history"""
-    
+    """Track order status changes for audit / timeline."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    order = models.ForeignKey(
-        Order,
-        on_delete=models.CASCADE,
-        related_name='history'
-    )
-    
-    status_from = models.CharField(max_length=20, blank=True)
-    status_to = models.CharField(max_length=20)
-    changed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='order_changes'
-    )
-    
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="history")
+    status_from = models.CharField(max_length=50, blank=True)
+    status_to = models.CharField(max_length=50)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="order_changes")
     notes = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
-        db_table = 'order_history'
-        verbose_name = 'Order History'
-        verbose_name_plural = 'Order Histories'
-        ordering = ['-timestamp']
+        db_table = "orders_orderhistory"
+        ordering = ["-timestamp"]
         indexes = [
-            models.Index(fields=['order', 'timestamp']),
+            models.Index(fields=["changed_by", "timestamp"]),
         ]
-    
+
     def __str__(self):
-        return f"{self.order.order_number}: {self.status_from} → {self.status_to}"
+        return f"{self.order.order_number}: {self.status_from} -> {self.status_to} at {self.timestamp}"
 
 
 class ReorderItem(models.Model):
-    """Quick reorder functionality"""
-    
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='reorder_items'
-    )
-    menu_item = models.ForeignKey(
-        'menu.MenuItem',
-        on_delete=models.CASCADE,
-        related_name='reorder_items'
-    )
-    
+    """Simple model to keep fast-reorder entries for a user."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reorder_items")
+    menu_item = models.ForeignKey("menu.MenuItem", on_delete=models.CASCADE, related_name="reorder_items")
     quantity = models.PositiveIntegerField(default=1)
     last_ordered = models.DateTimeField(auto_now=True)
     order_count = models.PositiveIntegerField(default=1)
-    
+
     class Meta:
-        db_table = 'reorder_item'
-        unique_together = ['user', 'menu_item']
-        ordering = ['-last_ordered']
-    
+        db_table = "orders_reorderitem"
+        unique_together = [("user", "menu_item")]
+        ordering = ["-last_ordered"]
+
     def __str__(self):
-        return f"{self.user.get_short_name()} - {self.menu_item.name}"
-    
+        return f"{self.user} — {self.menu_item.name} ({self.quantity})"
+
     def increment_order_count(self):
-        """Increment order count"""
         self.order_count += 1
         self.last_ordered = timezone.now()
         self.save()

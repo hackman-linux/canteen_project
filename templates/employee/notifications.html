@@ -14,13 +14,13 @@
 <a class="nav-link" href="{% url 'employee:order_history' %}">
     <i class="bi bi-clock-history me-2"></i>Order History
 </a>
-<a class="nav-link active" href="{% url 'employee:notifications' %}">
+<a class="nav-link active" href="{% url 'employee:notifications_list' %}">
     <i class="bi bi-bell me-2"></i>Notifications
     {% if unread_notifications > 0 %}
     <span class="badge bg-danger rounded-pill">{{ unread_notifications }}</span>
     {% endif %}
 </a>
-<a class="nav-link" href="{% url 'profile' %}">
+<a class="nav-link" href="{% url 'employee:profile' %}">
     <i class="bi bi-person me-2"></i>Profile
 </a>
 {% endblock %}

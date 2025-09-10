@@ -1,0 +1,19 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card shadow-lg p-4">
+        <h2 class="mb-3">Are you sure you want to log out?</h2>
+        <p class="text-muted">You will need to sign in again to access your account.</p>
+
+        <div class="d-flex justify-content-center mt-4">
+            <a href="{% url 'auth:logout' %}" class="btn btn-danger me-3">
+                Yes, Logout
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -472,3 +472,17 @@ class ReportSubscription(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.frequency})"
+
+class AuditLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="audit_logs")
+    activity = models.CharField(max_length=100)   # e.g. "Login", "Logout", "Payment"
+    description = models.TextField()              # Detailed description of the action
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"{self.user} - {self.activity} at {self.timestamp}"

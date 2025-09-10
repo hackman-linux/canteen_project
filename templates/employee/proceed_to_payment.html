@@ -1,0 +1,22 @@
+<!-- templates/orders/proceed_to_payment.html -->
+{% extends "base/base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h4 class="card-title">Proceed to Payment</h4>
+      <p>Your order <strong>{{ order.order_number }}</strong> has been validated by the canteen admin.</p>
+      <p>Total Amount: <strong>{{ order.total_amount }} FCFA</strong></p>
+      
+      <form method="post" action="#">
+        {% csrf_token %}
+        <button class="btn btn-success" disabled>
+          Pay Now (Payment integration not configured)
+        </button>
+      </form>
+      <p class="text-muted mt-2">⚠️ Ask the administrator to enable the payment gateway.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

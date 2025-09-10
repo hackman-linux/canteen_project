@@ -10,7 +10,10 @@ from django.db.models import Count, Sum, Q, Avg
 from datetime import datetime, timedelta
 from decimal import Decimal
 from .models import SystemConfig
+from apps.reports.models import AuditLog
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -111,26 +114,38 @@ class EmployeeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         
         # Recent notifications
         recent_notifications = Notification.objects.filter(
-            user=user
-        ).select_related('notification').order_by('-created_at')[:5]
+            target_user=user
+        ).select_related('target_user').order_by('-created_at')[:5]
         context['recent_notifications'] = recent_notifications
         
         # Unread notifications count
         unread_notifications = Notification.objects.filter(
-            user=user,
+            target_user=user,
             is_read=False
         ).count()
         context['unread_notifications'] = unread_notifications
         
         return context
 
-@login_required
-def profile_view(request):
-    return render(request, "auth/profile.html")  # make this template
+def notifications_list(request):
+    return render(request, "employee/notifications.html") 
 
-@login_required
+
+def profile_view(request):
+    return render(request, "auth/profile.html")  
+
+
 def settings_view(request):
-    return render(request, "auth/settings.html")  # make this template
+    return render(request, "auth/settings.html")  
+
+def logout_confirm_view(request):
+    """Show confirmation page before logout"""
+    return render(request, "auth/logout.html")
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, "You have been logged out successfully.")
+    return redirect("auth/login.html")
     
 
 
@@ -326,6 +341,103 @@ class SystemAdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, Template
         context['status_filter'] = status_filter
         
         return context
+
+User = get_user_model()
+
+
+# -------------------------
+# User Management Dashboard
+# -------------------------
+def UserManagementView(request):
+    """System Admin - Manage Users"""
+
+    # Statistics
+    total_users = User.objects.count()
+    employees_count = User.objects.filter(role="employee").count()
+    canteen_admins_count = User.objects.filter(role="canteen_admin").count()
+    active_users_count = User.objects.filter(is_active=True).count()
+
+    # List all users
+    users = User.objects.all().order_by("-date_joined")
+
+    context = {
+        "total_users": total_users,
+        "employees_count": employees_count,
+        "canteen_admins_count": canteen_admins_count,
+        "active_users_count": active_users_count,
+        "users": users,
+    }
+    return render(request, "system_admin/user_management.html", context)
+
+
+# -------------------------
+# Create User
+# -------------------------
+def create_user_view(request):
+    """System Admin - Create new user"""
+    if request.method == "POST":
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        username = request.POST.get("username")
+        email = request.POST.get("email")
+        employee_id = request.POST.get("employee_id")
+        department = request.POST.get("department")
+        role = request.POST.get("role")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        # Validation
+        if not (first_name and last_name and username and email and role and password):
+            messages.error(request, "All required fields must be filled.")
+            return redirect("system_admin:user_management")
+
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return redirect("system_admin:user_management")
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
+            return redirect("system_admin:user_management")
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+            return redirect("system_admin:user_management")
+
+        # Create user
+        user = User.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+            email=email,
+            employee_id=employee_id,
+            department=department,
+            role=role,
+            password=make_password(password),
+            is_active=True,
+        )
+
+        messages.success(request, f"User {user.get_full_name()} created successfully.")
+        return redirect("system_admin:user_management")
+
+    return redirect("system_admin:user_management")
+
+
+def is_system_admin(user):
+    return user.is_authenticated and user.role == "system_admin"
+
+
+def audit_logs_view(request):
+    today = now().date()
+    logs = AuditLog.objects.select_related("user").order_by("-timestamp")[:200]
+
+    context = {
+        "audit_logs": logs,
+        "total_activities": AuditLog.objects.count(),
+        "today_events": AuditLog.objects.filter(timestamp__date=today).count(),
+        "active_users": AuditLog.objects.filter(timestamp__date=today).values("user").distinct().count(),
+        "failed_logins": AuditLog.objects.filter(activity_type="failed_login", timestamp__date=today).count(),
+    }
+    return render(request, "audit_logs.html", context)
 
 
 # Authentication Views

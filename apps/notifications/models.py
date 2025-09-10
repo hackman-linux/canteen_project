@@ -27,7 +27,7 @@ NOTIFICATION_TYPE_CHOICES = [
 class Notification(models.Model):
     TYPE_CHOICES = NOTIFICATION_TYPE_CHOICES
 
-    user = models.ForeignKey(
+    target_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="notifications"

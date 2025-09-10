@@ -24,6 +24,15 @@ def initiate_payment(request):
     return JsonResponse({"message": "Payment initiation placeholder"})
 
 @login_required
+def proceed_to_payment(request, order_id):
+    order = get_object_or_404(Order, id=order_id, employee=request.user)
+    if order.status != "VALIDATED":
+        messages.error(request, "Order not validated yet.")
+        return redirect("orders:history")
+    return render(request, "payment_checkout.html", {"order": order})
+
+
+@login_required
 def payment_status(request, transaction_id):
     return JsonResponse({"transaction_id": transaction_id, "status": "pending"})
 

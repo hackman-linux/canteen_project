@@ -17,7 +17,8 @@ app_name = 'auth'
 # Main authentication URLs
 urlpatterns = [
     path("login/", views.login_view, name="login"),
-    path("logout/", views.logout_view, name="logout"),
+    path("logout/", views.logout_confirm_view, name="logout_confirm"),
+    path("logout/confirm", views.logout_view, name="logout"),
     path("contact-admin-reset/", views.contact_admin_reset, name="contact_admin_reset"),
 ]
 
@@ -27,13 +28,16 @@ employee_urlpatterns = [
     path('refresh-orders/', views.refresh_employee_orders, name='refresh_orders'),
     path('menu/', menu_views.employee_menu, name='menu'),
     path('place-order/', orders_views.place_order, name='place_order'),
+    path('order-detail/<uuid:order_id>/', orders_views.order_detail, name='order_detail'),
     path('order-history/', orders_views.order_history, name='order_history'),
     # Changed from employee_notifications to notifications_list (the actual function that exists)
-    path('notifications/', notifications_views.notifications_list, name='notifications'),
-    path('add-to-cart/', orders_views.add_to_cart, name='add_to_cart'),
-    path('quick-order/', orders_views.quick_order, name='quick_order'),
-    path('process-topup/', payments_views.process_topup, name='process_topup'),
-    # path("contact-admin-reset/", views.contact_admin_reset, name="contact_admin_reset"),
+    path('notifications/', views.notifications_list, name='notifications_list'),
+    path('profile/', views.profile_view, name='profile'),
+    path('settings/', views.settings_view, name='settings'),
+    # path('add-to-cart/', orders_views.add_to_cart, name='add_to_cart'),
+    # path('quick-order/', orders_views.quick_order, name='quick_order'),
+    # path('process-topup/', payments_views.process_topup, name='process_topup'),
+    # # path("contact-admin-reset/", views.contact_admin_reset, name="contact_admin_reset"),
 ]
 
 # Canteen Admin URLs
@@ -46,19 +50,20 @@ canteen_admin_urlpatterns = [
     path('notifications/create/', notifications_views.send_system_notification, name='notifications_create'),
     path('reports/', reports_views.canteen_admin_reports, name='reports'),
     path('dashboard-data/', views.canteen_admin_dashboard_data, name='dashboard_data'),
-    path('order-queue/', orders_views.order_queue, name='order_queue'),
-    path('update-order-status/', orders_views.update_order_status, name='update_order_status'),
-    path('add-menu-item/', menu_views.add_menu_item, name='add_menu_item'),
+    # path('order-queue/', orders_views.order_queue, name='order_queue'),
+    # path('update-order-status/', orders_views.update_order_status, name='update_order_status'),
+    # path('add-menu-item/', menu_views.add_menu_item, name='add_menu_item'),
     # path('generate-daily-report/', reports_views.generate_daily_report, name='generate_daily_report'),
 ]
 
 # System Admin URLs
 system_admin_urlpatterns = [
     path('dashboard/', views.SystemAdminDashboardView.as_view(), name='dashboard'),
-    path('users/', views.SystemAdminDashboardView.as_view(), name='users'),  # Same as dashboard
+    path('user-management/', views.UserManagementView, name='user_management'),
+    path('create-user/', views.create_user_view, name="create_user"), 
     path('system-config/', views.system_config, name='system_config'),
     path('analytics/', reports_views.system_admin_reports, name='analytics'),
-    # path('audit-logs/', views.audit_logs, name='audit_logs'),
+    path("audit-logs/", views.audit_logs_view, name="audit_logs"),
 ]
 
 # Include role-specific URLs with namespace

@@ -139,38 +139,40 @@ def delete_notification(request, notification_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
-@login_required
-def notifications_api(request):
-    """API endpoint for user notifications"""
-    # Get recent notifications
-    notifications = UserNotification.objects.filter(
-        user=request.user
-    ).select_related('notification').order_by('-created_at')[:10]
+
+
+# @login_required
+# def notifications_api(request):
+#     """API endpoint for user notifications"""
+#     # Get recent notifications
+#     notifications = UserNotification.objects.filter(
+#         user=request.user
+#     ).select_related('notification').order_by('-created_at')[:10]
     
-    notifications_data = []
-    for user_notification in notifications:
-        notification = user_notification.notification
-        notifications_data.append({
-            'id': str(user_notification.id),
-            'title': notification.title,
-            'message': notification.message,
-            'type': notification.notification_type,
-            'is_read': user_notification.is_read,
-            'created_at': user_notification.created_at.strftime('%b %d, %Y at %I:%M %p'),
-            'priority': notification.priority,
-            'action_url': notification.action_url,
-            'action_text': notification.action_text
-        })
+#     notifications_data = []
+#     for user_notification in notifications:
+#         notification = user_notification.notification
+#         notifications_data.append({
+#             'id': str(user_notification.id),
+#             'title': notification.title,
+#             'message': notification.message,
+#             'type': notification.notification_type,
+#             'is_read': user_notification.is_read,
+#             'created_at': user_notification.created_at.strftime('%b %d, %Y at %I:%M %p'),
+#             'priority': notification.priority,
+#             'action_url': notification.action_url,
+#             'action_text': notification.action_text
+#         })
     
-    # Get unread count
-    unread_count = UserNotification.objects.filter(
-        user=request.user, is_read=False
-    ).count()
+#     # Get unread count
+#     unread_count = UserNotification.objects.filter(
+#         user=request.user, is_read=False
+#     ).count()
     
-    return JsonResponse({
-        'notifications': notifications_data,
-        'unread_count': unread_count
-    })
+#     return JsonResponse({
+#         'notifications': notifications_data,
+#         'unread_count': unread_count
+#     })
 
 
 @login_required
