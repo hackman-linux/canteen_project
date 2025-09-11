@@ -1,6 +1,6 @@
 import uuid
 from decimal import Decimal
-
+from apps.payments.models import WalletTransaction
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -8,6 +8,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseForbidden
+from django.db.models import Sum, Count
 
 from .models import Order, OrderItem, OrderHistory, ReorderItem, OrderQueue
 from apps.menu.models import MenuItem
@@ -90,25 +91,43 @@ def place_order(request):
 
     # Present menu items so user can choose quantities
     menu_items = MenuItem.objects.all().order_by("name")
-    return render(request, "orders/checkout_form.html", {"form": form, "menu_items": menu_items})
+    return render(request, "employee/menu.html", {"form": form, "menu_items": menu_items})
 
 
 @login_required
 def order_history(request):
-    """Show the current user's orders (simple pagination)."""
-    page = int(request.GET.get("page", 1))
-    page_size = 12
-    offset = (page - 1) * page_size
-    orders_qs = Order.objects.filter(employee=request.user).order_by("-created_at")
-    total = orders_qs.count()
-    orders = orders_qs[offset: offset + page_size]
-    has_more = (offset + page_size) < total
+    """Display the logged-in employee's order history with stats."""
+    employee = request.user  
 
-    return render(request, "orders/order_history.html", {
-        "orders": orders,
-        "has_more_orders": has_more,
-        "page": page,
-    })
+    # Get all orders for this employee
+    orders = (
+        Order.objects.filter(employee=employee)
+        .select_related("employee")
+        .prefetch_related("items__menu_item", "history")
+        .order_by("-created_at")
+    )
+
+    # Stats
+    total_orders = orders.count()
+    total_spent = orders.aggregate(total=Sum("total_amount"))["total"] or 0
+
+    # Orders placed this month
+    start_of_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    monthly_orders = orders.filter(created_at__gte=start_of_month).count()
+
+    # Pagination/load more (for future use)
+    limit = int(request.GET.get("limit", 10))
+    paginated_orders = orders[:limit]
+    has_more_orders = orders.count() > limit
+
+    context = {
+        "orders": paginated_orders,
+        "total_orders": total_orders,
+        "monthly_orders": monthly_orders,
+        "total_spent": total_spent,
+        "has_more_orders": has_more_orders,
+    }
+    return render(request, "employee/order_history.html", context)
 
 
 @login_required
@@ -139,8 +158,123 @@ def order_detail(request, order_id):
         return JsonResponse(data)
 
     # Otherwise render a template fragment for the modal (create partial at templates/orders/partials/order_detail.html)
-    return render(request, "orders/partials/order_detail.html", {"order": order})
+    return render(request, "employee/order_detail.html", {"order": order})
 
+
+@login_required
+def quick_order(request, item_id=None):
+    """
+    Create a simple 'quick order' for an employee without going through the full place_order form.
+    - If `item_id` is given, order just that item.
+    - Otherwise, show menu for selection.
+    """
+
+    if request.method == "POST":
+        item_id = request.POST.get("item_id")
+        menu_item = get_object_or_404(MenuItem, id=item_id)
+
+        # Create a new order
+        order = Order.objects.create(
+            employee=request.user,
+            full_name=request.user.get_full_name() or request.user.username,
+            email=request.user.email,
+            phone_number="N/A",   # you can extend later
+            office_number="N/A",
+            status="pending",
+            subtotal=menu_item.price,
+            total_amount=menu_item.price,  # taxes/fees can be added later
+        )
+
+        # Attach item
+        order.items.create(
+            order=order,
+            product=menu_item,
+            quantity=1,
+            price=menu_item.price
+        )
+
+        messages.success(request, f"Quick order placed for {menu_item.name}. Waiting for validation.")
+        return redirect("order_history")  # redirect to employee’s order history
+
+    # GET request → show quick order menu
+    menu_items = MenuItem.objects.all()
+    return render(request, "employee/quick_order.html", {"menu_items": menu_items})
+
+
+@login_required
+def add_to_cart(request, item_id):
+    """
+    Add a menu item to the employee's current cart (an order with 'pending' status).
+    If no pending order exists, create one.
+    """
+
+    # Get the menu item
+    menu_item = get_object_or_404(MenuItem, id=item_id)
+
+    # Find or create a pending order for this employee
+    order, created = Order.objects.get_or_create(
+        employee=request.user,
+        status="pending",
+        defaults={
+            "full_name": request.user.get_full_name() or request.user.username,
+            "email": request.user.email,
+            "phone_number": "N/A",
+            "office_number": "N/A",
+            "subtotal": 0,
+            "total_amount": 0,
+        }
+    )
+
+    # Add item to order items
+    order_item = order.items.create(
+        order=order,
+        product=menu_item,
+        quantity=1,
+        price=menu_item.price
+    )
+
+    # Update totals
+    order.subtotal += menu_item.price
+    order.total_amount += menu_item.price
+    order.save()
+
+    messages.success(request, f"{menu_item.name} added to your cart.")
+    return redirect("order_history")  # Or wherever you want to send the user
+
+
+
+
+@login_required
+def process_topup(request):
+    """
+    Allow employee to top up their wallet balance.
+    For now we simulate the topup (e.g., via cash or external payment).
+    """
+
+    if request.method == "POST":
+        amount = request.POST.get("amount")
+
+        try:
+            amount = Decimal(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be positive")
+
+            # Create wallet transaction
+            WalletTransaction.objects.create(
+                employee=request.user,
+                amount=amount,
+                transaction_type="credit",
+                description="Wallet Top-up",
+                created_at=timezone.now(),
+            )
+
+            messages.success(request, f"Wallet successfully topped up with {amount} XAF.")
+            return redirect("employee_dashboard")
+
+        except Exception as e:
+            messages.error(request, f"Invalid amount: {e}")
+
+    return render(request, "employee/process_topup.html")
 
 @login_required
 @user_passes_test(is_canteen_admin)
@@ -148,7 +282,7 @@ def orders_management(request):
     """Canteen admin view showing pending orders to validate/cancel."""
     pending = Order.objects.filter(status=Order.STATUS_PENDING).order_by("created_at")
     validated = Order.objects.filter(status=Order.STATUS_VALIDATED).order_by("-validated_at")[:30]
-    return render(request, "orders/orders_management.html", {"pending_orders": pending, "validated_orders": validated})
+    return render(request, "canteen_admin/orders_management.html", {"pending_orders": pending, "validated_orders": validated})
 
 
 @login_required
@@ -233,4 +367,4 @@ def proceed_to_payment(request, order_id):
         return redirect(f"{payments_url}?order_id={order.id}")
     except Exception:
         # If payments endpoint not present, render a simple page instructing next steps.
-        return render(request, "orders/proceed_to_payment.html", {"order": order})
+        return render(request, "employee/proceed_to_payment.html", {"order": order})

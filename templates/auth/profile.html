@@ -2,97 +2,66 @@
 
 {% block title %}Profile Settings - Canteen Management{% endblock %}
 
-{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
-
-{% block sidebar %}
-{% if user.role == 'employee' %}
-    <a class="nav-link" href="{% url 'employee:dashboard' %}">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-    </a>
-    <a class="nav-link" href="{% url 'employee:menu' %}">
-        <i class="bi bi-book me-2"></i>Menu
-    </a>
-    <a class="nav-link active" href="{% url 'profile' %}">
-        <i class="bi bi-person me-2"></i>Profile
-    </a>
-{% elif user.role == 'canteen_admin' %}
-    <a class="nav-link" href="{% url 'canteen_admin:dashboard' %}">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-    </a>
-    <a class="nav-link" href="{% url 'canteen_admin:orders' %}">
-        <i class="bi bi-list-check me-2"></i>Orders
-    </a>
-    <a class="nav-link" href="{% url 'canteen_admin:menu_management' %}">
-        <i class="bi bi-book me-2"></i>Menu Management
-    </a>
-    <a class="nav-link active" href="{% url 'profile' %}">
-        <i class="bi bi-person me-2"></i>Profile
-    </a>
-{% endif %}
-{% endblock %}
-
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-<li class="breadcrumb-item active">Profile Settings</li>
-{% endblock %}
-
-{% block page_title %}Profile Settings{% endblock %}
-
-{% block page_actions %}
-<button class="btn btn-outline-secondary" onclick="window.history.back()">
-    <i class="bi bi-arrow-left me-2"></i>Back
-</button>
-{% endblock %}
-
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <!-- Profile Overview Card -->
+        <!-- Profile Overview -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-person-circle me-2"></i>Profile Information
-                </h5>
+                <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Profile Information</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 text-center">
-                        <div class="profile-avatar mb-3">
-                            <i class="bi bi-person-circle text-primary" style="font-size: 6rem;"></i>
-                        </div>
-                        <span class="badge bg-{{ user.role_color }} fs-6">
-                            {{ user.get_role_display }}
-                        </span>
+                <table class="table table-borderless">
+                    <tr>
+                        <td class="fw-bold text-muted">Full Name:</td>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Username:</td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Email:</td>
+                        <td>{{ user.email|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Department:</td>
+                        <td>{{ user.department|default:"Not assigned" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Last Login:</td>
+                        <td>{% if user.last_login %}{{ user.last_login|timesince }} ago{% else %}Never{% endif %}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Profile Edit Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Profile</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}">
                     </div>
-                    <div class="col-md-9">
-                        <table class="table table-borderless">
-                            <tr>
-                                <td class="fw-bold text-muted">Full Name:</td>
-                                <td>{{ user.first_name }} {{ user.last_name }}</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold text-muted">Username:</td>
-                                <td>{{ user.username }}</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold text-muted">Email:</td>
-                                <td>{{ user.email|default:"Not provided" }}</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold text-muted">Department:</td>
-                                <td>{{ user.department|default:"Not assigned" }}</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold text-muted">Employee ID:</td>
-                                <td>{{ user.employee_id|default:"N/A" }}</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold text-muted">Last Login:</td>
-                                <td>
-                                    {% if user.last_login %}
-                                        {{ user.last_login|timesince }} ago
-                                    {% else %}
-                                        Never
-                                    {% endif %}
-                                </td>
-                            </tr>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <input type="text" class="form-control" name="department" value="{{ user.department }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-2"></i>Save Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

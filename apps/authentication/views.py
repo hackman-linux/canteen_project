@@ -6,6 +6,7 @@ from django.views.generic import View, TemplateView
 from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib import messages
 from django.utils import timezone
+from django.db import models
 from django.db.models import Count, Sum, Q, Avg
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -84,13 +85,13 @@ class EmployeeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         
         # Current orders (active orders)
         current_orders = Order.objects.filter(
-            customer=user,
+            employee=user,
             status__in=['pending', 'confirmed', 'preparing', 'ready']
         ).order_by('-created_at')
         
         # Monthly statistics
         monthly_orders = Order.objects.filter(
-            customer=user,
+            employee=user,
             created_at__date__gte=this_month
         ).count()
         
@@ -230,10 +231,10 @@ class CanteenAdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, Templat
         
         # Average order completion time
         avg_order_time = completed_orders.filter(
-            confirmed_at__isnull=False,
-            completed_at__isnull=False
+            validated_at__isnull=False,
+            paid_at__isnull=False
         ).annotate(
-            completion_time=models.F('completed_at') - models.F('confirmed_at')
+            completion_time=models.F('paid_at') - models.F('validated_at')
         ).aggregate(avg=Avg('completion_time'))['avg']
         
         if avg_order_time:
@@ -380,6 +381,7 @@ def create_user_view(request):
         last_name = request.POST.get("last_name")
         username = request.POST.get("username")
         email = request.POST.get("email")
+        phone_number = request.POST.get("phone_number")  
         employee_id = request.POST.get("employee_id")
         department = request.POST.get("department")
         role = request.POST.get("role")
@@ -387,7 +389,7 @@ def create_user_view(request):
         confirm_password = request.POST.get("confirm_password")
 
         # Validation
-        if not (first_name and last_name and username and email and role and password):
+        if not (first_name and last_name and username and email and phone_number and role and password):
             messages.error(request, "All required fields must be filled.")
             return redirect("system_admin:user_management")
 
@@ -403,12 +405,17 @@ def create_user_view(request):
             messages.error(request, "Username already exists.")
             return redirect("system_admin:user_management")
 
+        if User.objects.filter(phone_number=phone_number).exists():  
+            messages.error(request, "Phone number already exists.")
+            return redirect("system_admin:user_management")
+
         # Create user
         user = User.objects.create(
             first_name=first_name,
             last_name=last_name,
             username=username,
             email=email,
+            phone_number=phone_number,  # ✅ saved
             employee_id=employee_id,
             department=department,
             role=role,
@@ -420,7 +427,6 @@ def create_user_view(request):
         return redirect("system_admin:user_management")
 
     return redirect("system_admin:user_management")
-
 
 def is_system_admin(user):
     return user.is_authenticated and user.role == "system_admin"

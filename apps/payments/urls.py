@@ -7,7 +7,7 @@ app_name = 'payments'
 urlpatterns = [
     # Payment processing
     path('process/', views.process_payment, name='process_payment'),
-    path('topup/', views.process_topup, name='process_topup'),
+    path("process-topup/", views.process_topup, name="process_topup"),
     
     # Payment management
     path('history/', views.payment_history, name='payment_history'),

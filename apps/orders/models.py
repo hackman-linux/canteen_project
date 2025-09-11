@@ -63,6 +63,7 @@ class Order(models.Model):
     special_instructions = models.TextField(blank=True)
 
     # Status & payment
+    actual_prep_time = models.DurationField(null=True, blank=True, help_text="Time taken to prepare the order")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     payment_method = models.CharField(max_length=30, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
 

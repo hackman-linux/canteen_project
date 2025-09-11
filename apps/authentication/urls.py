@@ -34,9 +34,9 @@ employee_urlpatterns = [
     path('notifications/', views.notifications_list, name='notifications_list'),
     path('profile/', views.profile_view, name='profile'),
     path('settings/', views.settings_view, name='settings'),
-    # path('add-to-cart/', orders_views.add_to_cart, name='add_to_cart'),
-    # path('quick-order/', orders_views.quick_order, name='quick_order'),
-    # path('process-topup/', payments_views.process_topup, name='process_topup'),
+    path('add-to-cart/', orders_views.add_to_cart, name='add_to_cart'),
+    path('quick-order/', orders_views.quick_order, name='quick_order'),
+    path('process-topup/', payments_views.process_topup, name='process_topup'),
     # # path("contact-admin-reset/", views.contact_admin_reset, name="contact_admin_reset"),
 ]
 

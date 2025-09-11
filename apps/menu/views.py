@@ -90,7 +90,7 @@ def menu_view(request):
         'items': items,
         'categories': categories,
     }
-    return render(request, 'menu/menu.html', context)
+    return render(request, 'employee/menu.html', context)
 
 
 class MenuManagementView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -329,7 +329,7 @@ def inventory_management(request):
         'out_of_stock_count': MenuItem.objects.filter(current_stock=0).count(),
     }
     
-    return render(request, 'menu/inventory.html', context)
+    return render(request, 'canteen_admin/inventory.html', context)
 
 
 @login_required

@@ -1,51 +1,33 @@
 {% extends 'base/base.html' %}
-{% load static %}
 
-{% block page_title %}Today's Menu{% endblock %}
+{% block title %}Employee Dashboard - Canteen System{% endblock %}
 
-{% block breadcrumb %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-        <li class="breadcrumb-item active">Menu</li>
-    </ol>
-</nav>
-{% endblock %}
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
 
 {% block sidebar %}
-<div class="sidebar-section">
-    <h6 class="sidebar-heading">Quick Actions</h6>
-    <a href="{% url 'orders:history' %}" class="sidebar-link">
-        <i class="bi bi-clock-history"></i>
-        <span>Order History</span>
-    </a>
-    <a href="{% url 'auth:profile' %}" class="sidebar-link">
-        <i class="bi bi-person"></i>
-        <span>Profile</span>
-    </a>
-</div>
+<a class="nav-link" href="{% url 'employee:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link active" href="{% url 'employee:menu' %}">
+    <i class="bi bi-card-list me-2"></i>Menu
+</a>
+<a class="nav-link" href="{% url 'employee:place_order' %}">
+    <i class="bi bi-cart-plus me-2"></i>Place Order
+</a>
+<a class="nav-link" href="{% url 'employee:order_history' %}">
+    <i class="bi bi-clock-history me-2"></i>Order History
+</a>
+<a class="nav-link" href="{% url 'employee:notifications_list' %}">
+    <i class="bi bi-bell me-2"></i>Notifications
+    {% if unread_notifications > 0 %}
+    <span class="badge bg-danger rounded-pill ms-2">{{ unread_notifications }}</span>
+    {% endif %}
+</a>
+{% endblock %}
 
-<div class="sidebar-section">
-    <h6 class="sidebar-heading">Filters</h6>
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="filterAvailable" checked>
-        <label class="form-check-label" for="filterAvailable">
-            Available Items
-        </label>
-    </div>
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="filterVegetarian">
-        <label class="form-check-label" for="filterVegetarian">
-            Vegetarian
-        </label>
-    </div>
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="filterSpicy">
-        <label class="form-check-label" for="filterSpicy">
-            Spicy
-        </label>
-    </div>
-</div>
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'employee:dashboard' %}">Employee</a></li>
+<li class="breadcrumb-item active">Dashboard</li>
 {% endblock %}
 
 {% block content %}
@@ -403,7 +385,7 @@ class MenuManager {
         showLoading('Processing order...');
 
         $.ajax({
-            url: "{% url 'orders:create' %}",
+            url: "{% url 'orders:place_order' %}",
             method: 'POST',
             data: JSON.stringify(cartData),
             contentType: 'application/json',

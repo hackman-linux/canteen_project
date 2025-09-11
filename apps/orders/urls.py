@@ -10,6 +10,9 @@ urlpatterns = [
     path("place-order/", views.place_order, name="place_order"),     # alternate name used by other includes
     path("history/", views.order_history, name="history"),
     path("detail/<uuid:order_id>/", views.order_detail, name="detail"),
+    path("quick-order/", views.quick_order, name="quick_order"),
+    path("add-to-cart/", views.add_to_cart, name="add_to_cart"),
+    path("process-topup/", views.process_topup, name="process_topup"),
 
     # Canteen admin
     path("manage/", views.orders_management, name="manage"),

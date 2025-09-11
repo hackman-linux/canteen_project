@@ -550,6 +550,39 @@ def process_orange_topup(payment):
 
 
 @login_required
+def process_topup(request):
+    """
+    Allow employee to top up their wallet balance.
+    For now we simulate the topup (e.g., via cash or external payment).
+    """
+
+    if request.method == "POST":
+        amount = request.POST.get("amount")
+
+        try:
+            amount = Decimal(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be positive")
+
+            # Create wallet transaction
+            WalletTransaction.objects.create(
+                employee=request.user,
+                amount=amount,
+                transaction_type="credit",
+                description="Wallet Top-up",
+                created_at=timezone.now(),
+            )
+
+            messages.success(request, f"Wallet successfully topped up with {amount} XAF.")
+            return redirect("employee_dashboard")
+
+        except Exception as e:
+            messages.error(request, f"Invalid amount: {e}")
+
+    return render(request, "employee/process_topup.html")
+
+
+@login_required
 def payment_history(request):
     """Display user payment history"""
     payments = Payment.objects.filter(user=request.user).order_by('-created_at')

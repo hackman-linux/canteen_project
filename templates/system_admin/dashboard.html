@@ -346,11 +346,13 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3">
+                        <a class="nav-link" href="{% url 'system_admin:user_management' %}">
                         <button class="btn btn-outline-primary w-100 mb-2" onclick="createUser()">
                             <i class="bi bi-person-plus d-block fs-3 mb-2"></i>
                             <div>Create User</div>
                             <small class="text-muted">Add new system user</small>
                         </button>
+                        </a>
                     </div>
                     <div class="col-md-3">
                         <button class="btn btn-outline-info w-100 mb-2" onclick="viewLogs()">

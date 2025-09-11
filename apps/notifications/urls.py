@@ -6,12 +6,13 @@ app_name = "notifications"
 urlpatterns = [
     # User notifications
     path('', views.notifications_list, name='notifications_list'),
-    # path("", views.NotificationListView.as_view(), name="list"),
     path('mark_read/<uuid:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
     path('mark-all-read/', views.mark_all_read, name='mark_all_read'),
     path('delete/<uuid:notification_id>/', views.delete_notification, name='delete_notification'),
     # path('api/', views.notifications_api, name='notifications_api'),
     path('preferences/', views.notification_preferences, name='notification_preferences'),
+    path('real-time/', views.get_real_time_notifications, name='real_time'),
+     path('stats/', views.notification_stats_api, name='stats_api'),
 
 
     # System notification management

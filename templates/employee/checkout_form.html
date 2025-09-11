@@ -1,6 +1,45 @@
-<!-- templates/orders/checkout_form.html -->
-{% extends "base/base.html" %}
+{% extends 'base/base.html' %}
 
+{% block title %}Employee Dashboard - Canteen System{% endblock %}
+
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block sidebar %}
+<a class="nav-link" href="{% url 'employee:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link" href="{% url 'employee:menu' %}">
+    <i class="bi bi-card-list me-2"></i>Menu
+</a>
+<a class="nav-link active" href="{% url 'employee:place_order' %}">
+    <i class="bi bi-cart-plus me-2"></i>Place Order
+</a>
+<a class="nav-link" href="{% url 'employee:order_history' %}">
+    <i class="bi bi-clock-history me-2"></i>Order History
+</a>
+<a class="nav-link" href="{% url 'employee:notifications_list' %}">
+    <i class="bi bi-bell me-2"></i>Notifications
+    {% if unread_notifications > 0 %}
+    <span class="badge bg-danger rounded-pill ms-2">{{ unread_notifications }}</span>
+    {% endif %}
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'employee:place_order' %}">Employee</a></li>
+<li class="breadcrumb-item active">Place Order</li>
+{% endblock %}
+
+{% block page_title %}Welcome Back, {{ user.first_name }}!{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-primary me-2" onclick="quickOrder()">
+    <i class="bi bi-lightning me-2"></i>Quick Order
+</button>
+<button class="btn btn-outline-success" onclick="viewTodaysMenu()">
+    <i class="bi bi-eye me-2"></i>Today's Menu
+</button>
+{% endblock %}
 {% block content %}
 <div class="container mt-5">
   <h3>Place a New Order</h3>
