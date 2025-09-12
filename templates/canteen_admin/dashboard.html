@@ -1,3 +1,4 @@
+{% extends 'base/base.html' %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -185,10 +186,10 @@
     </style>
     
     {% block extra_css %}{% endblock %}
+    {% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
 </head>
 <body>
     <!-- Include Navigation Bar -->
-    {% include 'base/navbar.html' %}
 
     <div class="container-fluid p-0">
         <div class="d-flex">
@@ -197,10 +198,31 @@
                 <nav class="nav flex-column py-3 px-2">
                     {% block sidebar %}
                     <!-- Default sidebar items - will be overridden by specific templates -->
-                    <a class="nav-link active" href="{% url 'dashboard' %}">
-                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-                    </a>
-                    {% endblock %}
+<a class="nav-link active" href="{% url 'canteen_admin:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:menu_management' %}">
+    <i class="bi bi-menu-button-wide me-2"></i>Menu Management
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:orders_management' %}">
+    <i class="bi bi-bag me-2"></i>Orders Management
+    {% if pending_orders > 0 %}
+    <span class="badge bg-warning rounded-pill">{{ pending_orders }}</span>
+    {% endif %}
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:inventory' %}">
+    <i class="bi bi-boxes me-2"></i>Inventory
+    {% if low_stock_items > 0 %}
+    <span class="badge bg-danger rounded-pill">{{ low_stock_items }}</span>
+    {% endif %}
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:notifications_create' %}">
+    <i class="bi bi-bell me-2"></i>Notifications
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:reports' %}">
+    <i class="bi bi-graph-up me-2"></i>Reports
+</a>
+{% endblock %}
                 </nav>
             </div>
             
@@ -263,7 +285,6 @@
     </div>
 
     <!-- Include Footer -->
-    {% include 'base/footer.html' %}
 
     <!-- Notification Container for Real-time notifications -->
     <div class="notification-container" id="notificationContainer"></div>

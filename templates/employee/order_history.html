@@ -3,6 +3,8 @@
 
 {% block page_title %}Order History{% endblock %}
 
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+
 {% block breadcrumb %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -13,10 +15,10 @@
 {% endblock %}
 
 {% block sidebar %}
-<a class="nav-link active" href="{% url 'employee:menu' %}">
+<a class="nav-link" href="{% url 'employee:menu' %}">
     <i class="bi bi-card-list me-2"></i>Menu
 </a>
-<a class="nav-link" href="{% url 'employee:order_history' %}">
+<a class="nav-link active" href="{% url 'employee:order_history' %}">
     <i class="bi bi-clock-history me-2"></i>Order History
 </a>
 <a class="nav-link" href="{% url 'employee:notifications_list' %}">

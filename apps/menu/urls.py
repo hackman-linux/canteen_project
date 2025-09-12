@@ -35,4 +35,10 @@ urlpatterns = [
 
     # Category CRUD
     path('category/create/', views.create_menu_category, name='create_menu_category'),
+    path("update-status/", views.update_status, name="update_status"),
+    path("statistics/", views.MenuStatisticsView.as_view(), name="statistics"),
+    path("bulk-make-available/", views.bulk_make_available, name="bulk_make_available"),
+    path("bulk-make-unavailable/", views.bulk_make_unavailable, name="bulk_make_unavailable"),
+    path("bulk-change-category/", views.bulk_change_category, name="bulk_change_category"),
+    path("bulk/delete/", views.bulk_delete, name="bulk_delete"),
 ]

@@ -1,0 +1,89 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Inventory Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/inventory.css' %}">
+<style>
+    .inventory-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    .inventory-table th, .inventory-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    .inventory-table th {
+        background-color: #f4f4f4;
+    }
+    .low-stock {
+        background-color: #ffe5e5;
+    }
+    .out-stock {
+        background-color: #ffcccc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">📦 Inventory Management</h2>
+
+    <div class="mb-3">
+        <a href="{% url 'menu:add_menu_item' %}" class="btn btn-primary">➕ Add New Item</a>
+    </div>
+
+    <table class="inventory-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Low Stock Threshold</th>
+                <th>Status</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr class="
+                {% if item.current_stock == 0 %} out-stock
+                {% elif item.current_stock <= item.low_stock_threshold %} low-stock
+                {% endif %}
+            ">
+                <td>{{ item.name }}</td>
+                <td>{{ item.category.name }}</td>
+                <td>{{ item.current_stock }}</td>
+                <td>{{ item.low_stock_threshold }}</td>
+                <td>
+                    {% if item.current_stock == 0 %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                    {% elif item.current_stock <= item.low_stock_threshold %}
+                        <span class="badge bg-warning">Low Stock</span>
+                    {% else %}
+                        <span class="badge bg-success">Available</span>
+                    {% endif %}
+                </td>
+                <td>{{ item.updated_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    <a href="{% url 'menu:update_status' item.id %}" class="btn btn-sm btn-secondary">Update</a>
+                    <a href="{% url 'menu:delete_item' item.id %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">No items in inventory.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/inventory.js' %}"></script>
+{% endblock %}

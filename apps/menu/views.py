@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, ListView
 from django.http import JsonResponse
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.db.models import Q, Count, Sum, Avg, F
 from django.db import models
@@ -330,6 +331,21 @@ def inventory_management(request):
     }
     
     return render(request, 'canteen_admin/inventory.html', context)
+
+def update_status(request, item_id):
+    """Canteen Admin - Update availability status of a menu item"""
+    item = get_object_or_404(MenuItem, id=item_id)
+
+    # Toggle between available/unavailable
+    if item.is_available:
+        item.is_available = False
+        messages.info(request, f"{item.name} marked as unavailable.")
+    else:
+        item.is_available = True
+        messages.success(request, f"{item.name} marked as available.")
+
+    item.save()
+    return redirect("menu:menu_management")
 
 
 @login_required
@@ -716,3 +732,91 @@ def search_menu_items(request):
         'total_pages': page_obj.paginator.num_pages,
         'total_items': items.count()
     })
+
+class MenuStatisticsView(TemplateView):
+    template_name = "menu/statistics.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Menu statistics
+        total_items = MenuItem.objects.count()
+        available_items = MenuItem.objects.filter(is_available=True).count()
+        featured_items = MenuItem.objects.filter(is_featured=True).count()
+        low_stock_items = MenuItem.objects.filter(
+            current_stock__lte=F('low_stock_threshold')
+        ).count()
+
+        context.update({
+            'total_items': total_items,
+            'available_items': available_items,
+            'featured_items': featured_items,
+            'low_stock_items': low_stock_items,
+        })
+
+        # Categories
+        categories = MenuCategory.objects.annotate(
+            items_count=Count('menu_items')
+        ).order_by('display_order')
+        context['categories'] = categories
+
+        # Recent items
+        recent_items = MenuItem.objects.select_related('category').order_by('-created_at')[:10]
+        context['recent_items'] = recent_items
+
+        # Top performing items
+        today = timezone.now().date()
+        top_items = MenuItem.objects.filter(
+            order_items__order__created_at__date=today,
+            order_items__order__status='completed'
+        ).annotate(
+            orders_today=Count('order_items'),
+            revenue_today=Sum(
+                F('order_items__quantity') * F('order_items__unit_price')
+            )
+        ).order_by('-orders_today')[:5]
+        context['top_items'] = top_items
+
+        return context
+
+@require_POST
+def bulk_make_available(request):
+    """Mark selected menu items as available"""
+    item_ids = request.POST.getlist("items")
+    if item_ids:
+        MenuItem.objects.filter(id__in=item_ids).update(is_available=True)
+        messages.success(request, f"{len(item_ids)} items marked as available.")
+    return redirect("menu:menu_management")
+
+
+@require_POST
+def bulk_make_unavailable(request):
+    """Mark selected menu items as unavailable"""
+    item_ids = request.POST.getlist("items")
+    if item_ids:
+        MenuItem.objects.filter(id__in=item_ids).update(is_available=False)
+        messages.success(request, f"{len(item_ids)} items marked as unavailable.")
+    return redirect("menu:menu_management")
+
+
+@require_POST
+def bulk_change_category(request):
+    """Change category for multiple items"""
+    item_ids = request.POST.getlist("items")
+    new_category_id = request.POST.get("category_id")
+    if item_ids and new_category_id:
+        MenuItem.objects.filter(id__in=item_ids).update(category_id=new_category_id)
+        messages.success(request, f"Category changed for {len(item_ids)} items.")
+    return redirect("menu:menu_management")
+
+@require_POST
+def bulk_delete(request):
+    """Bulk delete selected menu items"""
+    item_ids = request.POST.getlist("item_ids[]")  # JS sends as array
+
+    if not item_ids:
+        return JsonResponse({"success": False, "message": "No items selected."}, status=400)
+
+    deleted_count, _ = MenuItem.objects.filter(id__in=item_ids).delete()
+
+    return JsonResponse({"success": True, "deleted_count": deleted_count})

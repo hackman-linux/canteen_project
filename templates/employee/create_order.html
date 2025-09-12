@@ -1,0 +1,33 @@
+{% extends "base/base.html" %}
+
+{% block title %}Create Order{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Create a New Order</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Full Name</label>
+      <input type="text" name="full_name" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Phone Number</label>
+      <input type="text" name="phone_number" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Office Number</label>
+      <input type="text" name="office_number" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Special Instructions</label>
+      <textarea name="special_instructions" class="form-control"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Place Order</button>
+  </form>
+</div>
+{% endblock %}
