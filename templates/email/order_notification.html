@@ -1,0 +1,483 @@
+<!-- templates/emails/order_notification.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Order Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #ffffff;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .order-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .customer-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .order-items {
+            margin: 20px 0;
+        }
+        .item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .item:last-child {
+            border-bottom: none;
+        }
+        .total {
+            background: #e8f5e8;
+            padding: 15px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 1.2em;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .actions {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #e0e0e0;
+            border-top: none;
+        }
+        .urgent {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .btn {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍽️ New Order Notification</h1>
+        <p>Order requires your validation</p>
+    </div>
+
+    <div class="content">
+        <div class="urgent">
+            ⚠️ <strong>Action Required:</strong> A new order has been placed and requires validation.
+        </div>
+
+        <div class="order-details">
+            <h3>📋 Order Details</h3>
+            <p><strong>Order Number:</strong> #{{ order.order_number }}</p>
+            <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y \a\t g:i A" }}</p>
+            <p><strong>Status:</strong> <span style="background: #ffc107; color: #212529; padding: 4px 8px; border-radius: 4px;">{{ order.get_status_display }}</span></p>
+        </div>
+
+        <div class="customer-info">
+            <h4>👤 Customer Information</h4>
+            <p><strong>Name:</strong> {{ order.full_name }}</p>
+            <p><strong>Email:</strong> {{ order.email }}</p>
+            <p><strong>Phone:</strong> {{ order.phone_number }}</p>
+            <p><strong>Office:</strong> {{ order.office_number }}</p>
+            {% if order.special_instructions %}
+            <p><strong>Special Instructions:</strong> {{ order.special_instructions }}</p>
+            {% endif %}
+        </div>
+
+        <div class="order-items">
+            <h4>🛒 Items Ordered</h4>
+            {% for item in order_items %}
+            <div class="item">
+                <div>
+                    <strong>{{ item.name }}</strong><br>
+                    <small>Quantity: {{ item.quantity }}</small>
+                </div>
+                <div>
+                    {{ item.unit_price|floatformat:0 }} XAF × {{ item.quantity }} = <strong>{{ item.total|floatformat:0 }} XAF</strong>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="total">
+                💰 Total Amount: {{ order.total_amount|floatformat:0 }} XAF
+            </div>
+        </div>
+
+        <div class="actions">
+            <h4>🎯 Quick Actions</h4>
+            <a href="{{ validation_url }}" class="btn btn-success">✅ Validate Order</a>
+            <a href="{{ manage_orders_url }}" class="btn btn-primary">📊 Manage All Orders</a>
+        </div>
+
+        <div style="background: #e8f4fd; padding: 15px; border-radius: 6px; margin-top: 20px;">
+            <p><strong>📝 Next Steps:</strong></p>
+            <ol>
+                <li>Review the order details above</li>
+                <li>Check item availability</li>
+                <li>Validate or cancel the order</li>
+                <li>Customer will be notified automatically</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🏢 <strong>Enterprise Canteen Management System</strong></p>
+        <p>This is an automated notification. Please do not reply to this email.</p>
+        <p><small>Generated on {{ order.created_at|date:"F d, Y \a\t g:i A" }}</small></p>
+    </div>
+</body>
+</html>
+
+<!-- templates/emails/order_validated.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Validated - Payment Required</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #ffffff;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .order-summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .payment-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .payment-btn {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin: 15px 0;
+        }
+        .payment-btn:hover {
+            background: #0056b3;
+            color: white;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #e0e0e0;
+            border-top: none;
+        }
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .timeline-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+            color: white;
+        }
+        .timeline-icon.completed {
+            background: #28a745;
+        }
+        .timeline-icon.current {
+            background: #007bff;
+        }
+        .timeline-icon.pending {
+            background: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✅ Order Validated!</h1>
+        <p>Your order has been approved</p>
+    </div>
+
+    <div class="content">
+        <div class="success-message">
+            🎉 <strong>Great news!</strong> Your order #{{ order.order_number }} has been validated by our canteen admin and is ready for payment.
+        </div>
+
+        <div class="order-summary">
+            <h3>📋 Order Summary</h3>
+            <p><strong>Order Number:</strong> #{{ order.order_number }}</p>
+            <p><strong>Customer:</strong> {{ customer.get_full_name }}</p>
+            <p><strong>Total Items:</strong> {{ order.items.count }}</p>
+            <p><strong>Total Amount:</strong> <span style="font-size: 1.3em; color: #28a745; font-weight: bold;">{{ order.total_amount|floatformat:0 }} XAF</span></p>
+            <p><strong>Validated At:</strong> {{ order.validated_at|date:"F d, Y \a\t g:i A" }}</p>
+        </div>
+
+        <div class="payment-section">
+            <h3>💳 Payment Required</h3>
+            <p>Please proceed with payment to complete your order.</p>
+            
+            <a href="{{ payment_link }}" class="payment-btn">
+                🚀 Proceed to Payment
+            </a>
+            
+            <p><small>Secure payment processing • Multiple payment methods available</small></p>
+        </div>
+
+        <div class="timeline">
+            <h4>📊 Order Progress</h4>
+            <div class="timeline-item">
+                <div class="timeline-icon completed">1</div>
+                <div>Order Placed ✓</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon completed">2</div>
+                <div>Order Validated ✓</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon current">3</div>
+                <div><strong>Payment Required (Current Step)</strong></div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon pending">4</div>
+                <div>Order Preparation</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon pending">5</div>
+                <div>Ready for Pickup</div>
+            </div>
+        </div>
+
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; margin-top: 20px;">
+            <p><strong>⏰ Important Notes:</strong></p>
+            <ul>
+                <li>Please complete payment within 24 hours</li>
+                <li>Your order will be prepared after payment confirmation</li>
+                <li>You'll receive pickup notification when ready</li>
+                <li>Contact us for any payment assistance</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🏢 <strong>Enterprise Canteen Management System</strong></p>
+        <p>Questions? Contact our support team</p>
+        <p><small>This email was sent because your order status changed.</small></p>
+    </div>
+</body>
+</html>
+
+<!-- templates/emails/order_cancelled.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Cancelled</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #ffffff;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .cancellation-notice {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .order-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .next-steps {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #e0e0e0;
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>❌ Order Cancelled</h1>
+        <p>We apologize for any inconvenience</p>
+    </div>
+
+    <div class="content">
+        <div class="cancellation-notice">
+            <strong>⚠️ Order Cancellation Notice</strong><br>
+            Your order #{{ order.order_number }} has been cancelled by our canteen admin.
+        </div>
+
+        <div class="order-details">
+            <h3>📋 Cancelled Order Details</h3>
+            <p><strong>Order Number:</strong> #{{ order.order_number }}</p>
+            <p><strong>Customer:</strong> {{ customer.get_full_name }}</p>
+            <p><strong>Order Amount:</strong> {{ order.total_amount|floatformat:0 }} XAF</p>
+            <p><strong>Cancelled At:</strong> {{ order.cancelled_at|date:"F d, Y \a\t g:i A" }}</p>
+        </div>
+
+        <div class="next-steps">
+            <h4>🔄 What's Next?</h4>
+            <p>Don't worry! You can place a new order anytime:</p>
+            <ul>
+                <li>Browse our current menu</li>
+                <li>Select your favorite items</li>
+                <li>Place a new order</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="{% url 'menu:employee_menu' %}" class="btn">🍽️ View Menu & Order Again</a>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 6px; margin-top: 20px;">
+            <p><strong>💡 Need Help?</strong></p>
+            <p>If you have questions about this cancellation or need assistance placing a new order, please contact our canteen team.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🏢 <strong>Enterprise Canteen Management System</strong></p>
+        <p>Thank you for your understanding</p>
+        <p><small>This is an automated notification about your order status.</small></p>
+    </div>
+</body>
+</html>

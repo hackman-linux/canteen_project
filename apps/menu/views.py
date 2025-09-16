@@ -11,6 +11,7 @@ from django.db import models
 from django.core.paginator import Paginator
 from decimal import Decimal
 import json
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import MenuItem, MenuCategory, DailyMenu, MenuItemReview, MenuItemFavorite
 from apps.orders.models import Order, OrderItem
@@ -71,12 +72,24 @@ class EmployeeMenuView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
 @login_required
 def employee_menu(request):
-    """Employee menu view function"""
-    if not request.user.is_employee():
-        return redirect('dashboard_redirect')
-    
-    view = EmployeeMenuView.as_view()
-    return view(request)
+    categories = MenuCategory.objects.prefetch_related('menu_items').all()
+    menu_categories = []
+
+    for category in categories:
+        items = category.menu_items.filter(is_available=True)
+        if items.exists():
+            menu_categories.append({
+                "id": category.id,
+                "name": category.name,
+                "icon": category.icon or "list",  # fallback icon
+                "items": items
+            })
+
+    context = {
+        "menu_categories": menu_categories,
+        "current_date": timezone.now().date(),
+    }
+    return render(request, "employee/menu.html", context)
 
 
 @login_required
@@ -94,6 +107,8 @@ def menu_view(request):
     return render(request, 'employee/menu.html', context)
 
 
+# Replace your existing menu_management function and MenuManagementView with this:
+
 class MenuManagementView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """Canteen admin menu management interface"""
     template_name = 'canteen_admin/menu_management.html'
@@ -104,15 +119,42 @@ class MenuManagementView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        # Get all menu items with related data
+        menu_items = MenuItem.objects.select_related('category').annotate(
+            orders_today=Count(
+                'order_items',
+                filter=Q(
+                    order_items__order__created_at__date=timezone.now().date(),
+                    order_items__order__status__in=['confirmed', 'preparing', 'ready', 'completed']
+                )
+            )
+        ).order_by('-created_at')
+        
+        # Categories - make sure to get active categories
+        categories = MenuCategory.objects.filter(is_active=True).annotate(
+            items_count=Count('menu_items')
+        ).order_by('display_order')
+    
+        # DEBUG: Print categories to console
+        print(f"DEBUG: Found {categories.count()} categories")
+        for cat in categories:
+            print(f"  - {cat.name} (ID: {cat.id})")
+    
+        context['categories'] = categories
+        context['total_categories'] = categories.count()
+    
+        return context
+        
         # Menu statistics
-        total_items = MenuItem.objects.count()
-        available_items = MenuItem.objects.filter(is_available=True).count()
-        featured_items = MenuItem.objects.filter(is_featured=True).count()
-        low_stock_items = MenuItem.objects.filter(
+        total_items = menu_items.count()
+        available_items = menu_items.filter(is_available=True).count()
+        featured_items = menu_items.filter(is_featured=True).count()
+        low_stock_items = menu_items.filter(
             current_stock__lte=F('low_stock_threshold')
         ).count()
         
         context.update({
+            'menu_items': menu_items,  # Add this line - it was missing!
             'total_items': total_items,
             'available_items': available_items,
             'featured_items': featured_items,
@@ -124,18 +166,18 @@ class MenuManagementView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             items_count=Count('menu_items')
         ).order_by('display_order')
         context['categories'] = categories
+        context['total_categories'] = categories.count()  # Add this for the sidebar
         
         # Recent items
-        recent_items = MenuItem.objects.select_related('category').order_by('-created_at')[:10]
+        recent_items = menu_items[:10]
         context['recent_items'] = recent_items
         
         # Top performing items
         today = timezone.now().date()
-        top_items = MenuItem.objects.filter(
+        top_items = menu_items.filter(
             order_items__order__created_at__date=today,
             order_items__order__status='completed'
         ).annotate(
-            orders_today=Count('order_items'),
             revenue_today=Sum(
                 F('order_items__quantity') * F('order_items__unit_price')
             )
@@ -145,46 +187,88 @@ class MenuManagementView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
 
-@login_required
 def menu_management(request):
-    """Menu management view function"""
-    if not request.user.is_canteen_admin():
-        return redirect('dashboard_redirect')
-    
-    view = MenuManagementView.as_view()
-    return view(request)
+    if not (request.user.is_canteen_admin() or request.user.is_superuser):
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect("dashboard_redirect")
+
+    menu_items = MenuItem.objects.select_related("category").all()
+    categories = MenuCategory.objects.all()
+
+    return render(request, "canteen_admin/menu_management.html", {
+        "menu_items": menu_items,
+        "categories": categories,
+    })
 
 
 @login_required
 def add_menu_item(request):
-    """Add new menu item via AJAX"""
+    """Add new menu item with detailed error logging"""
+    print(f"Request method: {request.method}")
+    print(f"User: {request.user}")
+    print(f"Is canteen admin: {request.user.is_canteen_admin()}")
+    
     if not request.user.is_canteen_admin():
+        print("User is not canteen admin")
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
+            print(f"POST data: {request.POST}")
+            print(f"FILES: {request.FILES}")
+            
+            # Basic validation
+            required_fields = ['name', 'price', 'category']
+            for field in required_fields:
+                if not request.POST.get(field):
+                    return JsonResponse({'error': f'{field} is required'}, status=400)
             
             # Get category
-            category = get_object_or_404(MenuCategory, id=data['category_id'])
+            category_id = request.POST.get('category')
+            print(f"Category ID: {category_id}")
+            
+            try:
+                category = MenuCategory.objects.get(id=category_id)
+                print(f"Found category: {category.name}")
+            except MenuCategory.DoesNotExist:
+                return JsonResponse({'error': 'Invalid category selected'}, status=400)
             
             # Create menu item
-            menu_item = MenuItem.objects.create(
-                category=category,
-                name=data['name'],
-                description=data['description'],
-                price=Decimal(data['price']),
-                preparation_time=int(data.get('preparation_time', 15)),
-                current_stock=int(data.get('current_stock', 100)),
-                spice_level=data.get('spice_level', 'none'),
-                is_available=data.get('is_available', True),
-                created_by=request.user
-            )
+            menu_item_data = {
+                'category': category,
+                'name': request.POST['name'],
+                'description': request.POST.get('description', ''),
+                'price': Decimal(str(request.POST['price'])),
+                'preparation_time': int(request.POST.get('prep_time', 15)),
+                'current_stock': int(request.POST.get('current_stock', 100)),
+                'spice_level': request.POST.get('spice_level', 'none'),
+                'is_available': 'is_available' in request.POST,
+                'created_by': request.user
+            }
+            
+            print(f"Creating menu item with data: {menu_item_data}")
+            
+            menu_item = MenuItem.objects.create(**menu_item_data)
+            
+            # Handle image upload
+            if 'image' in request.FILES:
+                menu_item.image = request.FILES['image']
+                menu_item.save()
+                print("Image uploaded successfully")
             
             # Handle dietary tags
-            if 'dietary_tags' in data:
-                menu_item.dietary_tags = data['dietary_tags']
+            dietary_tags = []
+            if request.POST.get('is_vegetarian'):
+                dietary_tags.append('vegetarian')
+            if request.POST.get('is_spicy'):
+                dietary_tags.append('spicy')
+            
+            if dietary_tags:
+                menu_item.dietary_tags = dietary_tags
                 menu_item.save()
+                print(f"Dietary tags set: {dietary_tags}")
+            
+            print(f"Menu item created successfully: {menu_item.id}")
             
             return JsonResponse({
                 'success': True,
@@ -194,9 +278,10 @@ def add_menu_item(request):
             })
             
         except Exception as e:
-            return JsonResponse({
-                'error': f'Error adding menu item: {str(e)}'
-            }, status=400)
+            print(f"Error creating menu item: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': f'Error adding menu item: {str(e)}'}, status=400)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
@@ -820,3 +905,211 @@ def bulk_delete(request):
     deleted_count, _ = MenuItem.objects.filter(id__in=item_ids).delete()
 
     return JsonResponse({"success": True, "deleted_count": deleted_count})
+
+# Add these functions to your views.py file
+
+@login_required
+def toggle_item_availability(request, item_id):
+    """Toggle availability status of a menu item via AJAX"""
+    if not request.user.is_canteen_admin():
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            menu_item = get_object_or_404(MenuItem, id=item_id)
+            
+            # Toggle availability
+            menu_item.is_available = not menu_item.is_available
+            menu_item.save()
+            
+            status_text = "available" if menu_item.is_available else "unavailable"
+            message = f"{menu_item.name} marked as {status_text}."
+            
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'is_available': menu_item.is_available
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Error updating availability: {str(e)}'
+            }, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required 
+def update_status(request, item_id):
+    """Update availability status of a menu item (for form submissions)"""
+    if not request.user.is_canteen_admin():
+        messages.error(request, 'Unauthorized access.')
+        return redirect('dashboard_redirect')
+    
+    item = get_object_or_404(MenuItem, id=item_id)
+
+    # Toggle between available/unavailable
+    if item.is_available:
+        item.is_available = False
+        messages.info(request, f"{item.name} marked as unavailable.")
+    else:
+        item.is_available = True
+        messages.success(request, f"{item.name} marked as available.")
+
+    item.save()
+    return redirect("menu:menu_management")
+
+
+# Fix the add_menu_item function to handle form data correctly
+@login_required
+def add_menu_item(request):
+    """Add new menu item via AJAX or form submission"""
+    if not request.user.is_canteen_admin():
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            # Handle both JSON and form data
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                category_id = data['category_id']
+            else:
+                # Handle form data
+                data = request.POST
+                category_id = data.get('category')
+            
+            # Get category
+            category = get_object_or_404(MenuCategory, id=category_id)
+            
+            # Create menu item
+            menu_item = MenuItem.objects.create(
+                category=category,
+                name=data['name'],
+                description=data.get('description', ''),
+                price=Decimal(str(data['price'])),
+                preparation_time=int(data.get('prep_time', data.get('preparation_time', 15))),
+                current_stock=int(data.get('current_stock', 100)),
+                spice_level=data.get('spice_level', 'none'),
+                is_available=data.get('is_available', 'on') == 'on' if 'is_available' in data else True,
+                created_by=request.user
+            )
+            
+            # Handle image upload for form data
+            if 'image' in request.FILES:
+                menu_item.image = request.FILES['image']
+                menu_item.save()
+            
+            # Handle dietary tags
+            dietary_tags = []
+            if data.get('is_vegetarian'):
+                dietary_tags.append('vegetarian')
+            if data.get('is_spicy'):
+                dietary_tags.append('spicy')
+            
+            if dietary_tags:
+                menu_item.dietary_tags = dietary_tags
+                menu_item.save()
+            
+            if request.content_type == 'application/json':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Menu item added successfully',
+                    'item_id': str(menu_item.id),
+                    'item_name': menu_item.name
+                })
+            else:
+                messages.success(request, f'Menu item "{menu_item.name}" added successfully')
+                return redirect('menu:menu_management')
+            
+        except Exception as e:
+            error_msg = f'Error adding menu item: {str(e)}'
+            if request.content_type == 'application/json':
+                return JsonResponse({'error': error_msg}, status=400)
+            else:
+                messages.error(request, error_msg)
+                return redirect('menu:menu_management')
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+def create_menu_category(request):
+    """Create a new menu category - fixed version"""
+    if not request.user.is_canteen_admin():
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            # Handle both JSON and form data
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+            else:
+                data = request.POST
+            
+            category = MenuCategory.objects.create(
+                name=data['name'],
+                description=data.get('description', ''),
+                icon=data.get('icon', 'utensils'),
+                color=data.get('color', '#007bff'),
+                display_order=int(data.get('order', data.get('display_order', 0))),
+                is_active=data.get('is_active', True)
+            )
+            
+            if request.content_type == 'application/json':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Category created successfully',
+                    'category_id': str(category.id),
+                    'category_name': category.name
+                })
+            else:
+                messages.success(request, f'Category "{category.name}" created successfully')
+                return redirect('menu:menu_management')
+            
+        except Exception as e:
+            error_msg = f'Error creating category: {str(e)}'
+            if request.content_type == 'application/json':
+                return JsonResponse({'error': error_msg}, status=400)
+            else:
+                messages.error(request, error_msg)
+                return redirect('menu:menu_management')
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+def test_menu_management(request):
+    """Test view to debug menu management issues"""
+    
+    context = {
+        'user': request.user,
+        'is_canteen_admin': request.user.is_canteen_admin() if hasattr(request.user, 'is_canteen_admin') else False,
+        'categories': MenuCategory.objects.all(),
+        'menu_items_count': MenuItem.objects.count(),
+    }
+    
+    return JsonResponse({
+        'success': True,
+        'data': {
+            'user_id': request.user.id,
+            'user_role': getattr(request.user, 'role', 'unknown'),
+            'is_canteen_admin': context['is_canteen_admin'],
+            'categories_count': context['categories'].count(),
+            'menu_items_count': context['menu_items_count'],
+        }
+    })
+ # Remove this after debugging
+@login_required
+def debug_add_item(request):
+    """Debug version without CSRF for testing"""
+    if request.method == 'POST':
+        print("POST data received:")
+        for key, value in request.POST.items():
+            print(f"  {key}: {value}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Data received successfully',
+            'data': dict(request.POST.items())
+        })
+    
+    return JsonResponse({'error': 'Only POST allowed'}, status=405)

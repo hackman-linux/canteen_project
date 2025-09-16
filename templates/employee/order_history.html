@@ -159,6 +159,9 @@
     </div>
     {% endif %}
 </div>
+{% block extra_js %}
+    <script src="{% static 'js/scripts.js' %}"></script>
+{% endblock %}
 
 <!-- Modals (Details + Cancel) remain the same -->
 {{ block.super }}

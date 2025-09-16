@@ -657,8 +657,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{% load static %}
-<script src="{% static 'js/orders.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize filters
@@ -686,6 +685,9 @@ document.addEventListener('DOMContentLoaded', function() {
             filterOrders();
         });
     });
+    
+    // Initialize form handlers
+    initializeFormHandlers();
 });
 
 function initializeFilters() {
@@ -723,6 +725,30 @@ function initializeFilters() {
     });
 }
 
+function initializeFormHandlers() {
+    // Update Status Form
+    document.getElementById('updateStatusForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleStatusUpdate();
+    });
+    
+    // Cancel Order Form
+    document.getElementById('cancelOrderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleOrderCancellation();
+    });
+    
+    // Show/hide ready time section
+    document.getElementById('newStatus').addEventListener('change', function() {
+        const readyTimeSection = document.getElementById('readyTimeSection');
+        if (this.value === 'ready') {
+            readyTimeSection.style.display = 'block';
+        } else {
+            readyTimeSection.style.display = 'none';
+        }
+    });
+}
+
 function filterOrders() {
     const statusFilter = document.getElementById('statusFilter').value;
     const paymentFilter = document.getElementById('paymentFilter').value;
@@ -742,12 +768,498 @@ function filterOrders() {
         }
         
         // Payment filter
-    if (paymentFilter && !text.includes(paymentFilter)) {
-        show = false;
+        if (paymentFilter && !text.includes(paymentFilter)) {
+            show = false;
+        }
+        
+        // Customer search
+        if (customerSearch && !text.includes(customerSearch)) {
+            show = false;
+        }
+        
+        // Order ID search
+        if (orderIdSearch && !text.includes(orderIdSearch)) {
+            show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function globalSearchOrders(searchTerm) {
+    const rows = document.querySelectorAll('.order-row');
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const show = text.includes(lowerSearchTerm);
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function sortOrders(sortBy) {
+    const tbody = document.querySelector('#ordersTable tbody');
+    const rows = Array.from(tbody.querySelectorAll('.order-row'));
+    
+    rows.sort((a, b) => {
+        switch (sortBy) {
+            case 'newest':
+                return new Date(b.querySelector('td:nth-child(7)').textContent) - 
+                       new Date(a.querySelector('td:nth-child(7)').textContent);
+            case 'oldest':
+                return new Date(a.querySelector('td:nth-child(7)').textContent) - 
+                       new Date(b.querySelector('td:nth-child(7)').textContent);
+            case 'amount_high':
+                return parseFloat(b.querySelector('td:nth-child(4) .fw-bold').textContent.replace(/[^\d.]/g, '')) - 
+                       parseFloat(a.querySelector('td:nth-child(4) .fw-bold').textContent.replace(/[^\d.]/g, ''));
+            case 'amount_low':
+                return parseFloat(a.querySelector('td:nth-child(4) .fw-bold').textContent.replace(/[^\d.]/g, '')) - 
+                       parseFloat(b.querySelector('td:nth-child(4) .fw-bold').textContent.replace(/[^\d.]/g, ''));
+            case 'status':
+                return a.querySelector('td:nth-child(6)').textContent.localeCompare(
+                       b.querySelector('td:nth-child(6)').textContent);
+            default:
+                return 0;
+        }
+    });
+    
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('paymentFilter').value = '';
+    document.getElementById('timeFilter').value = 'today';
+    document.getElementById('customerSearch').value = '';
+    document.getElementById('orderIdSearch').value = '';
+    document.getElementById('globalSearch').value = '';
+    
+    filterOrders();
+}
+
+// Order Management Functions
+function confirmOrder(orderId) {
+    updateOrderStatus(orderId, 'confirmed');
+}
+
+function startPreparation(orderId) {
+    updateOrderStatus(orderId, 'preparing');
+}
+
+function markReady(orderId) {
+    document.getElementById('statusOrderId').value = orderId;
+    document.getElementById('newStatus').value = 'ready';
+    document.getElementById('readyTimeSection').style.display = 'block';
+    
+    // Set default ready time to 15 minutes from now
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 15);
+    document.getElementById('estimatedTime').value = now.toTimeString().slice(0, 5);
+    
+    new bootstrap.Modal(document.getElementById('updateStatusModal')).show();
+}
+
+function completeOrder(orderId) {
+    if (confirm('Mark this order as completed?')) {
+        updateOrderStatus(orderId, 'completed');
+    }
+}
+
+function cancelOrder(orderId) {
+    document.getElementById('cancelOrderId').value = orderId;
+    new bootstrap.Modal(document.getElementById('cancelOrderModal')).show();
+}
+
+function updateOrderStatus(orderId, status, additionalData = {}) {
+    showLoading(true);
+    
+    const formData = new FormData();
+    formData.append('order_id', orderId);
+    formData.append('status', status);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    // Add additional data
+    Object.keys(additionalData).forEach(key => {
+        formData.append(key, additionalData[key]);
+    });
+    
+    fetch('/canteen-admin/orders/update-status/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            showToast('Order status updated successfully', 'success');
+            // Update the row in the table
+            updateOrderRowInTable(orderId, data.order);
+        } else {
+            showToast(data.message || 'Error updating order status', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        showToast('Error updating order status', 'error');
+        console.error('Error:', error);
+    });
+}
+
+function handleStatusUpdate() {
+    const form = document.getElementById('updateStatusForm');
+    const formData = new FormData(form);
+    
+    showLoading(true);
+    
+    fetch('/canteen-admin/orders/update-status/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            showToast('Order status updated successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('updateStatusModal')).hide();
+            updateOrderRowInTable(formData.get('order_id'), data.order);
+        } else {
+            showToast(data.message || 'Error updating order status', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        showToast('Error updating order status', 'error');
+        console.error('Error:', error);
+    });
+}
+
+function handleOrderCancellation() {
+    const form = document.getElementById('cancelOrderForm');
+    const formData = new FormData(form);
+    
+    showLoading(true);
+    
+    fetch('/canteen-admin/orders/cancel/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            showToast('Order cancelled successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal')).hide();
+            updateOrderRowInTable(formData.get('order_id'), data.order);
+        } else {
+            showToast(data.message || 'Error cancelling order', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        showToast('Error cancelling order', 'error');
+        console.error('Error:', error);
+    });
+}
+
+function viewOrderDetails(orderId) {
+    showLoading(true);
+    
+    fetch(`/canteen-admin/orders/${orderId}/details/`)
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            document.getElementById('orderDetailsContent').innerHTML = data.html;
+            new bootstrap.Modal(document.getElementById('orderDetailsModal')).show();
+        } else {
+            showToast('Error loading order details', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        showToast('Error loading order details', 'error');
+        console.error('Error:', error);
+    });
+}
+
+function processAllPending() {
+    const pendingOrders = document.querySelectorAll('.order-row[data-status="pending"]');
+    
+    if (pendingOrders.length === 0) {
+        showToast('No pending orders to process', 'info');
+        return;
     }
     
-    // Add the rest of your filter logic...
-})
+    if (!confirm(`Process ${pendingOrders.length} pending orders?`)) {
+        return;
+    }
+    
+    showLoading(true);
+    
+    const orderIds = Array.from(pendingOrders).map(row => row.dataset.orderId);
+    
+    fetch('/canteen-admin/orders/process-all-pending/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ order_ids: orderIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            showToast(`${data.processed_count} orders processed successfully`, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message || 'Error processing orders', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        showToast('Error processing orders', 'error');
+        console.error('Error:', error);
+    });
 }
+
+function exportOrders() {
+    const filters = {
+        status: document.getElementById('statusFilter').value,
+        payment: document.getElementById('paymentFilter').value,
+        time: document.getElementById('timeFilter').value
+    };
+    
+    const queryString = new URLSearchParams(filters).toString();
+    window.open(`/canteen-admin/orders/export/?${queryString}`, '_blank');
+}
+
+function refreshOrders() {
+    location.reload();
+}
+
+function refreshPendingOrders() {
+    // Refresh only pending orders section
+    fetch('/canteen-admin/orders/pending-orders/')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update pending orders count in sidebar
+            const pendingBadge = document.querySelector('.nav-link[href*="orders_management"] .badge');
+            if (pendingBadge) {
+                pendingBadge.textContent = data.pending_count;
+                pendingBadge.style.display = data.pending_count > 0 ? '' : 'none';
+            }
+            
+            // Update stats cards
+            document.querySelector('.stats-card.bg-warning h4').textContent = data.pending_count;
+        }
+    })
+    .catch(error => console.error('Error refreshing pending orders:', error));
+}
+
+function updateOrderRowInTable(orderId, orderData) {
+    const row = document.querySelector(`[data-order-id="${orderId}"]`);
+    if (!row) return;
+    
+    // Update status badge
+    const statusCell = row.querySelector('td:nth-child(6)');
+    const statusBadge = statusCell.querySelector('.badge');
+    
+    const statusClasses = {
+        'pending': 'bg-warning',
+        'confirmed': 'bg-info',
+        'preparing': 'bg-primary',
+        'ready': 'bg-success',
+        'completed': 'bg-dark',
+        'cancelled': 'bg-danger'
+    };
+    
+    // Remove all status classes and add new one
+    Object.values(statusClasses).forEach(cls => statusBadge.classList.remove(cls));
+    statusBadge.classList.add(statusClasses[orderData.status]);
+    statusBadge.textContent = orderData.status_display;
+    
+    // Update ETA if available
+    const etaElement = statusCell.querySelector('small');
+    if (orderData.estimated_ready_time && orderData.status === 'ready') {
+        if (etaElement) {
+            etaElement.textContent = `ETA: ${orderData.estimated_ready_time}`;
+        } else {
+            statusCell.insertAdjacentHTML('beforeend', 
+                `<small class="d-block text-muted">ETA: ${orderData.estimated_ready_time}</small>`);
+        }
+    } else if (etaElement) {
+        etaElement.remove();
+    }
+    
+    // Update action buttons
+    updateActionButtons(row, orderData.status);
+    
+    // Update row data attribute
+    row.dataset.status = orderData.status;
+}
+
+function updateActionButtons(row, status) {
+    const actionsCell = row.querySelector('td:last-child .btn-group');
+    const orderId = row.dataset.orderId;
+    
+    let buttonsHtml = '';
+    
+    switch (status) {
+        case 'pending':
+            buttonsHtml = `
+                <button class="btn btn-outline-success" onclick="confirmOrder('${orderId}')" title="Confirm Order">
+                    <i class="bi bi-check"></i>
+                </button>`;
+            break;
+        case 'confirmed':
+            buttonsHtml = `
+                <button class="btn btn-outline-primary" onclick="startPreparation('${orderId}')" title="Start Preparation">
+                    <i class="bi bi-play"></i>
+                </button>`;
+            break;
+        case 'preparing':
+            buttonsHtml = `
+                <button class="btn btn-outline-info" onclick="markReady('${orderId}')" title="Mark Ready">
+                    <i class="bi bi-check-circle"></i>
+                </button>`;
+            break;
+        case 'ready':
+            buttonsHtml = `
+                <button class="btn btn-outline-dark" onclick="completeOrder('${orderId}')" title="Complete Order">
+                    <i class="bi bi-check2-all"></i>
+                </button>`;
+            break;
+    }
+    
+    // Always add view details button
+    buttonsHtml += `
+        <button class="btn btn-outline-secondary" onclick="viewOrderDetails('${orderId}')" title="View Details">
+            <i class="bi bi-eye"></i>
+        </button>`;
+    
+    // Add cancel button for pending/confirmed orders
+    if (status === 'pending' || status === 'confirmed') {
+        buttonsHtml += `
+            <button class="btn btn-outline-danger" onclick="cancelOrder('${orderId}')" title="Cancel Order">
+                <i class="bi bi-x"></i>
+            </button>`;
+    }
+    
+    actionsCell.innerHTML = buttonsHtml;
+}
+
+function printOrder() {
+    const content = document.getElementById('orderDetailsContent').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Order Details</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .no-print { display: none; }
+                    @media print {
+                        body { margin: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${content}
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() { window.close(); }, 1000);
+                    }
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+// Utility Functions
+function showLoading(show) {
+    const body = document.body;
+    if (show) {
+        body.classList.add('loading');
+    } else {
+        body.classList.remove('loading');
+    }
+}
+
+function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'primary'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        this.remove();
+    });
+}
+
+// Add loading overlay styles
+document.head.insertAdjacentHTML('beforeend', `
+    <style>
+        body.loading::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        body.loading::before {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+        }
+        
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
+`);
 </script>
-{% endblock %}
+{% endblock %};

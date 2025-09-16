@@ -37,6 +37,7 @@ employee_urlpatterns = [
     path('add-to-cart/', orders_views.add_to_cart, name='add_to_cart'),
     path('quick-order/', orders_views.quick_order, name='quick_order'),
     path('process-topup/', payments_views.process_topup, name='process_topup'),
+    path("switch-language/", views.language_switcher, name="language_switcher"),
     # # path("contact-admin-reset/", views.contact_admin_reset, name="contact_admin_reset"),
 ]
 

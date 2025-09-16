@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 from apps.authentication.views import DashboardRedirectView
 from apps.authentication import urls as auth_urls
+from django.conf.urls.i18n import i18n_patterns
 
 urlpatterns = [
     # Admin interface
@@ -61,6 +62,11 @@ urlpatterns = [
 #          auth_views.PasswordResetCompleteView.as_view(template_name="auth/password_reset_complete.html"), 
 #          name='password_reset_complete'),
  ]
+
+# Add this line so /i18n/setlang/ works
+urlpatterns += [
+    path('i18n/', include('django.conf.urls.i18n')),
+]
 
 # Serve media files during development
 if settings.DEBUG:

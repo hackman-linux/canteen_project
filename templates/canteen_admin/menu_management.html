@@ -330,7 +330,8 @@
 <div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form id="addItemForm" enctype="multipart/form-data">
+            <form method="post" action="{% url 'menu:add_item' %}" id="addItemForm" enctype="multipart/form-data">
+                {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title" id="addItemModalLabel">
                         <i class="bi bi-plus-circle"></i>
@@ -739,7 +740,7 @@ class MenuManagement {
         showLoading('Adding new item...');
 
         $.ajax({
-            url: '{% url "menu:add_menu_item" %}',
+            url: '{% url "menu:add_item" %}',
             method: 'POST',
             data: formData,
             processData: false,
@@ -804,7 +805,7 @@ class MenuManagement {
         showLoading('Adding category...');
 
         $.ajax({
-            url: '{% url "menu:create_menu_category" %}',
+            url: '{% url "menu:create_category" %}',
             method: 'POST',
             data: formData,
             processData: false,
@@ -967,6 +968,530 @@ function debounce(func, wait) {
 let menuManagement;
 $(document).ready(() => {
     menuManagement = new MenuManagement();
+});
+
+// Add this JavaScript to replace the existing script section in menu_management.html
+
+// Utility functions
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showAlert(message, type = 'info') {
+    // Create alert element
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alert && alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function showLoading(message = 'Loading...') {
+    // Remove existing loading if any
+    hideLoading();
+    
+    const loading = document.createElement('div');
+    loading.id = 'loadingOverlay';
+    loading.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+    loading.style.cssText = 'background: rgba(0,0,0,0.5); z-index: 10000;';
+    loading.innerHTML = `
+        <div class="bg-white p-4 rounded shadow">
+            <div class="d-flex align-items-center">
+                <div class="spinner-border text-primary me-3" role="status"></div>
+                <span>${message}</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loading);
+}
+
+function hideLoading() {
+    const loading = document.getElementById('loadingOverlay');
+    if (loading) {
+        loading.remove();
+    }
+}
+
+class MenuManagement {
+    constructor() {
+        this.selectedItems = new Set();
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.initializeFilters();
+    }
+
+    bindEvents() {
+        // View mode toggle
+        const viewModeInputs = document.querySelectorAll('input[name="viewMode"]');
+        viewModeInputs.forEach(input => {
+            input.addEventListener('change', (e) => {
+                this.toggleView(e.target.id);
+            });
+        });
+
+        // Select all checkbox
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', (e) => {
+                this.selectAll(e.target.checked);
+            });
+        }
+
+        // Individual checkboxes - use event delegation
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('item-checkbox')) {
+                this.toggleSelection(e.target.value, e.target.checked);
+            }
+        });
+
+        // Search and filters
+        const searchInput = document.getElementById('searchItems');
+        if (searchInput) {
+            searchInput.addEventListener('input', this.debounce(() => this.applyFilters(), 300));
+        }
+
+        const filterCategory = document.getElementById('filterCategory');
+        const filterStatus = document.getElementById('filterStatus');
+        if (filterCategory) filterCategory.addEventListener('change', () => this.applyFilters());
+        if (filterStatus) filterStatus.addEventListener('change', () => this.applyFilters());
+
+        const clearFilters = document.getElementById('clearFilters');
+        if (clearFilters) {
+            clearFilters.addEventListener('click', () => this.clearFilters());
+        }
+
+        // Bulk actions
+        const bulkActions = document.getElementById('bulkActions');
+        if (bulkActions) {
+            bulkActions.addEventListener('click', () => this.showBulkActions());
+        }
+
+        // Form submissions
+        const addItemForm = document.getElementById('addItemForm');
+        if (addItemForm) {
+            addItemForm.addEventListener('submit', (e) => this.handleAddItem(e));
+        }
+
+        const editItemForm = document.getElementById('editItemForm');
+        if (editItemForm) {
+            editItemForm.addEventListener('submit', (e) => this.handleEditItem(e));
+        }
+
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        if (addCategoryForm) {
+            addCategoryForm.addEventListener('submit', (e) => this.handleAddCategory(e));
+        }
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    toggleView(viewMode) {
+        const tableView = document.getElementById('tableViewContainer');
+        const cardView = document.getElementById('cardViewContainer');
+        
+        if (viewMode === 'tableView') {
+            if (tableView) tableView.style.display = 'block';
+            if (cardView) cardView.style.display = 'none';
+        } else {
+            if (tableView) tableView.style.display = 'none';
+            if (cardView) cardView.style.display = 'block';
+        }
+    }
+
+    selectAll(checked) {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+            if (checked) {
+                this.selectedItems.add(checkbox.value);
+            } else {
+                this.selectedItems.delete(checkbox.value);
+            }
+        });
+        
+        if (!checked) {
+            this.selectedItems.clear();
+        }
+        
+        this.updateSelectionUI();
+    }
+
+    toggleSelection(itemId, checked) {
+        if (checked) {
+            this.selectedItems.add(itemId);
+        } else {
+            this.selectedItems.delete(itemId);
+        }
+        this.updateSelectionUI();
+    }
+
+    updateSelectionUI() {
+        const count = this.selectedItems.size;
+        const bulkActionsBtn = document.getElementById('bulkActions');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        
+        if (bulkActionsBtn) {
+            bulkActionsBtn.disabled = count === 0;
+        }
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = count;
+        }
+
+        // Update select all checkbox state
+        const totalCheckboxes = document.querySelectorAll('.item-checkbox').length;
+        const checkedCheckboxes = document.querySelectorAll('.item-checkbox:checked').length;
+        const selectAllCheckbox = document.getElementById('selectAll');
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+            selectAllCheckbox.checked = checkedCheckboxes === totalCheckboxes && totalCheckboxes > 0;
+        }
+    }
+
+    applyFilters() {
+        const searchInput = document.getElementById('searchItems');
+        const filterCategory = document.getElementById('filterCategory');
+        const filterStatus = document.getElementById('filterStatus');
+        
+        const search = searchInput ? searchInput.value.toLowerCase() : '';
+        const category = filterCategory ? filterCategory.value : '';
+        const status = filterStatus ? filterStatus.value : '';
+
+        let visibleCount = 0;
+        const items = document.querySelectorAll('[data-item-id]');
+
+        items.forEach(item => {
+            const itemNameEl = item.querySelector('.fw-medium, .card-title');
+            const itemDescEl = item.querySelector('.small.text-muted');
+            const itemName = itemNameEl ? itemNameEl.textContent.toLowerCase() : '';
+            const itemDescription = itemDescEl ? itemDescEl.textContent.toLowerCase() : '';
+            const itemCategory = item.dataset.category;
+            const itemStatus = item.dataset.status;
+
+            let show = true;
+
+            // Search filter
+            if (search && !itemName.includes(search) && !itemDescription.includes(search)) {
+                show = false;
+            }
+
+            // Category filter
+            if (category && itemCategory !== category) {
+                show = false;
+            }
+
+            // Status filter
+            if (status && itemStatus !== status) {
+                show = false;
+            }
+
+            item.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        const itemCountEl = document.getElementById('itemCount');
+        if (itemCountEl) {
+            itemCountEl.textContent = `${visibleCount} items`;
+        }
+    }
+
+    clearFilters() {
+        const searchInput = document.getElementById('searchItems');
+        const filterCategory = document.getElementById('filterCategory');
+        const filterStatus = document.getElementById('filterStatus');
+        
+        if (searchInput) searchInput.value = '';
+        if (filterCategory) filterCategory.value = '';
+        if (filterStatus) filterStatus.value = '';
+        
+        this.applyFilters();
+    }
+
+    showBulkActions() {
+        if (this.selectedItems.size === 0) {
+            showAlert('Please select items first', 'warning');
+            return;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('bulkActionsModal'));
+        modal.show();
+    }
+
+    toggleAvailability(itemId) {
+        showLoading('Updating availability...');
+
+        fetch(`/menu/item/${itemId}/toggle-availability/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert(data.message, 'success');
+                location.reload();
+            } else {
+                showAlert(data.error || 'Error updating availability', 'danger');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error updating availability', 'danger');
+        });
+    }
+
+    deleteItem(itemId) {
+        if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+            return;
+        }
+
+        showLoading('Deleting item...');
+
+        fetch(`/menu/item/${itemId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert(data.message, 'success');
+                const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                if (itemElement) {
+                    itemElement.remove();
+                }
+                this.updateStatistics();
+            } else {
+                showAlert(data.error || 'Error deleting item', 'danger');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error deleting item', 'danger');
+        });
+    }
+
+    handleAddItem(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        showLoading('Adding new item...');
+
+        fetch('/menu/item/add/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert(data.message, 'success');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addItemModal'));
+                if (modal) modal.hide();
+                location.reload();
+            } else {
+                showAlert(data.error || 'Error adding item', 'danger');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error adding item', 'danger');
+        });
+    }
+
+    handleAddCategory(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        showLoading('Adding category...');
+
+        fetch('/menu/category/create/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert(data.message, 'success');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+                if (modal) modal.hide();
+                location.reload();
+            } else {
+                showAlert(data.error || 'Error adding category', 'danger');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error adding category', 'danger');
+        });
+    }
+
+    updateStatistics() {
+        // Implementation for updating statistics
+        fetch('/menu/statistics/')
+        .then(response => response.json())
+        .then(data => {
+            const totalItems = document.getElementById('totalItems');
+            const availableItems = document.getElementById('availableItems');
+            const totalCategories = document.getElementById('totalCategories');
+            
+            if (totalItems) totalItems.textContent = data.total_items;
+            if (availableItems) availableItems.textContent = data.available_items;
+            if (totalCategories) totalCategories.textContent = data.total_categories;
+        })
+        .catch(error => console.error('Error updating statistics:', error));
+    }
+
+    initializeFilters() {
+        this.applyFilters();
+    }
+}
+
+// Global functions for onclick events
+function editItem(itemId) {
+    if (window.menuManagement) {
+        // Implementation for edit item
+        showLoading('Loading item details...');
+        // Add your edit item logic here
+    }
+}
+
+function toggleAvailability(itemId) {
+    if (window.menuManagement) {
+        window.menuManagement.toggleAvailability(itemId);
+    }
+}
+
+function deleteItem(itemId) {
+    if (window.menuManagement) {
+        window.menuManagement.deleteItem(itemId);
+    }
+}
+
+function bulkAction(action) {
+    if (!window.menuManagement || window.menuManagement.selectedItems.size === 0) {
+        showAlert('No items selected', 'warning');
+        return;
+    }
+
+    const items = Array.from(window.menuManagement.selectedItems);
+    let confirmMessage = '';
+    let url = '';
+    let formData = new FormData();
+
+    // Add CSRF token
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+    switch(action) {
+        case 'make_available':
+            confirmMessage = `Make ${items.length} items available?`;
+            url = '/menu/bulk-make-available/';
+            break;
+        case 'make_unavailable':
+            confirmMessage = `Make ${items.length} items unavailable?`;
+            url = '/menu/bulk-make-unavailable/';
+            break;
+        case 'change_category':
+            const newCategory = prompt('Enter new category ID:');
+            if (!newCategory) return;
+            confirmMessage = `Change category for ${items.length} items?`;
+            url = '/menu/bulk-change-category/';
+            formData.append('category_id', newCategory);
+            break;
+        case 'delete':
+            confirmMessage = `Delete ${items.length} items? This cannot be undone.`;
+            url = '/menu/bulk/delete/';
+            break;
+    }
+
+    if (!confirm(confirmMessage)) return;
+
+    // Add selected items to form data
+    items.forEach(item => {
+        formData.append('items', item);
+    });
+
+    showLoading('Processing bulk action...');
+
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('bulkActionsModal'));
+        if (modal) modal.hide();
+        
+        if (data.success) {
+            showAlert(data.message || 'Bulk action completed successfully', 'success');
+            location.reload();
+        } else {
+            showAlert(data.error || 'Error processing bulk action', 'danger');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showAlert('Error processing bulk action', 'danger');
+    });
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    window.menuManagement = new MenuManagement();
 });
 </script>
 {% endblock %}

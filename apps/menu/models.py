@@ -78,6 +78,14 @@ class MenuItem(models.Model):
         on_delete=models.CASCADE, 
         related_name='menu_items'
     )
+
+    def is_vegetarian(self):
+        """Check if item is vegetarian"""
+        return 'vegetarian' in self.dietary_tags
+    
+    def is_spicy(self):
+        """Check if item is spicy"""
+        return self.spice_level in ['mild', 'medium', 'hot', 'very_hot']
     
     # Basic information
     name = models.CharField(max_length=200)

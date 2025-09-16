@@ -53,7 +53,13 @@ def contact_admin_reset(request):
     # Simple page telling user to contact system admin
     return render(request, "auth/contact_admin_reset.html")
 
+def is_canteen_admin(self):
+    """Check if user is canteen admin"""
+    return hasattr(self, 'role') and self.role == 'canteen_admin'
 
+def is_employee(self):
+    """Check if user is employee"""
+    return hasattr(self, 'role') and self.role == 'employee'
 
 
 class DashboardRedirectView(LoginRequiredMixin, View):
@@ -653,3 +659,6 @@ def custom_500(request):
 def custom_403(request, exception):
     """Custom 403 error handler"""
     return render(request, 'errors/403.html', status=403)
+
+def language_switcher(request):
+    return render(request, "language_switcher.html", {"redirect_to": request.GET.get("next", "/")})
