@@ -3,6 +3,7 @@
 {% block title %}Orders Management - Canteen Admin{% endblock %}
 
 {% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+{% load static %}
 
 {% block sidebar %}
 <a class="nav-link" href="{% url 'canteen_admin:dashboard' %}">
@@ -658,6 +659,7 @@
 
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/utils.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize filters

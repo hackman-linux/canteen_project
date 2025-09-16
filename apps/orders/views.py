@@ -194,9 +194,9 @@ def quick_order(request, item_id=None):
         )
 
         messages.success(request, f"Quick order placed for {menu_item.name}. Waiting for validation.")
-        return redirect("order_history")  # redirect to employee’s order history
+        return redirect("order_history")  # redirect to employeeâ€™s order history
 
-    # GET request → show quick order menu
+    # GET request â†’ show quick order menu
     menu_items = MenuItem.objects.all()
     return render(request, "employee/quick_order.html", {"menu_items": menu_items})
 
@@ -728,7 +728,7 @@ def create_order_from_cart(request):
         'total_amount': total_amount,
     }
     
-    return render(request, "orders/create_order.html", context)
+    return render(request, "employee/create_order.html", context)
 
 
 def process_order_from_cart(request, form, cart_items):

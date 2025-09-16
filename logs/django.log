@@ -13319,3 +13319,408 @@ INFO 2025-09-16 13:03:42,381 autoreload 518760 140223670476864 Watching for file
 INFO 2025-09-16 13:03:52,578 autoreload 518760 140223670476864 /home/codex/Desktop/project/apps/payments/views.py changed, reloading.
 INFO 2025-09-16 13:03:53,767 autoreload 518807 139653125947456 Watching for file changes with StatReloader
 INFO 2025-09-16 13:07:19,651 basehttp 518807 139652997576384 "GET /orders/place-order/ HTTP/1.1" 200 24539
+INFO 2025-09-16 14:12:37,584 autoreload 9858 140117527990336 Watching for file changes with StatReloader
+INFO 2025-09-16 14:14:07,066 autoreload 10054 140138415525952 Watching for file changes with StatReloader
+INFO 2025-09-16 14:14:26,448 autoreload 10054 140138415525952 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-16 14:14:27,422 autoreload 10118 140236587954240 Watching for file changes with StatReloader
+INFO 2025-09-16 14:14:38,374 autoreload 10118 140236587954240 /home/codex/Desktop/project/apps/authentication/urls.py changed, reloading.
+INFO 2025-09-16 14:14:39,858 autoreload 10220 139774625910848 Watching for file changes with StatReloader
+INFO 2025-09-16 14:14:50,969 autoreload 10220 139774625910848 /home/codex/Desktop/project/apps/orders/views.py changed, reloading.
+INFO 2025-09-16 14:14:51,805 autoreload 10340 140070162665536 Watching for file changes with StatReloader
+INFO 2025-09-16 14:15:45,051 autoreload 10340 140070162665536 /home/codex/Desktop/project/apps/orders/views.py changed, reloading.
+INFO 2025-09-16 14:15:46,252 autoreload 10474 139722042282048 Watching for file changes with StatReloader
+INFO 2025-09-16 14:16:15,750 autoreload 10804 139977438859328 Watching for file changes with StatReloader
+INFO 2025-09-16 14:16:22,250 basehttp 10804 139977378756288 "GET / HTTP/1.1" 302 0
+INFO 2025-09-16 14:16:22,300 basehttp 10804 139977378756288 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:16:22,770 basehttp 10804 139977378756288 "GET /employee/dashboard/ HTTP/1.1" 200 26946
+WARNING 2025-09-16 14:16:24,241 log 10804 139977378756288 Not Found: /favicon.ico
+INFO 2025-09-16 14:16:31,780 basehttp 10804 139977378756288 "GET /employee/menu/ HTTP/1.1" 200 60098
+INFO 2025-09-16 14:16:32,183 basehttp 10804 139977378756288 "GET /static/js/scripts.js HTTP/1.1" 200 18718
+INFO 2025-09-16 14:16:32,224 basehttp 10804 139977378756288 "GET /media/menu_items/meat.jpeg HTTP/1.1" 200 11167
+INFO 2025-09-16 14:16:32,228 basehttp 10804 139977357776576 "GET /media/menu_items/salade_15D3Dnb.jpeg HTTP/1.1" 200 17439
+INFO 2025-09-16 14:16:32,239 basehttp 10804 139977366169280 "GET /media/menu_items/salade.jpeg HTTP/1.1" 200 17439
+INFO 2025-09-16 14:16:32,267 basehttp 10804 139977144923840 "GET /media/menu_items/salade_17Or0QF.jpeg HTTP/1.1" 200 17439
+INFO 2025-09-16 14:16:32,278 basehttp 10804 139977136531136 "GET /media/menu_items/download_JKKP3ax.jpeg HTTP/1.1" 200 12347
+INFO 2025-09-16 14:16:32,294 basehttp 10804 139977128138432 "GET /media/menu_items/download.jpeg HTTP/1.1" 200 12347
+INFO 2025-09-16 14:16:32,493 basehttp 10804 139977378756288 "GET /orders/cart/get/ HTTP/1.1" 200 154
+WARNING 2025-09-16 14:16:32,605 log 10804 139977378756288 Not Found: /favicon.ico
+INFO 2025-09-16 14:16:36,378 basehttp 10804 139977357776576 "GET /orders/place-order/ HTTP/1.1" 200 24539
+INFO 2025-09-16 14:16:38,734 basehttp 10804 139977357776576 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:16:38,813 basehttp 10804 139977357776576 "GET /employee/dashboard/ HTTP/1.1" 200 26946
+INFO 2025-09-16 14:16:44,186 basehttp 10804 139977357776576 "GET /employee/menu/ HTTP/1.1" 200 60098
+INFO 2025-09-16 14:16:44,583 basehttp 10804 139977357776576 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:16:45,590 basehttp 10804 139977357776576 "POST /orders/cart/update/ HTTP/1.1" 200 57
+ERROR 2025-09-16 14:16:56,407 log 10804 139977357776576 Internal Server Error: /orders/create-order/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/decorators.py", line 23, in _wrapper_view
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/orders/views.py", line 731, in create_order_from_cart
+    return render(request, "orders/create_order.html", context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: orders/create_order.html
+ERROR 2025-09-16 14:16:56,411 basehttp 10804 139977357776576 "GET /orders/create-order/ HTTP/1.1" 500 98001
+INFO 2025-09-16 14:17:11,749 basehttp 10804 139977357776576 "GET /orders/cart/get/ HTTP/1.1" 200 444
+INFO 2025-09-16 14:17:13,435 basehttp 10804 139977357776576 "GET /orders/place-order/ HTTP/1.1" 200 24539
+INFO 2025-09-16 14:17:20,441 basehttp 10804 139977357776576 "POST /orders/place-order/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:17:20,499 basehttp 10804 139977357776576 "GET /menu/view/ HTTP/1.1" 200 31783
+INFO 2025-09-16 14:17:20,720 basehttp 10804 139977357776576 "GET /orders/cart/get/ HTTP/1.1" 200 444
+INFO 2025-09-16 14:17:29,049 basehttp 10804 139977357776576 "POST /orders/cart/clear/ HTTP/1.1" 200 57
+INFO 2025-09-16 14:17:40,993 basehttp 10804 139977357776576 "GET /employee/dashboard/ HTTP/1.1" 200 26946
+INFO 2025-09-16 14:17:44,571 basehttp 10804 139977357776576 "GET /employee/menu/ HTTP/1.1" 200 60098
+INFO 2025-09-16 14:17:44,943 basehttp 10804 139977357776576 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:17:47,983 basehttp 10804 139977357776576 "GET /orders/place-order/ HTTP/1.1" 200 24539
+INFO 2025-09-16 14:17:50,296 basehttp 10804 139977357776576 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:17:50,333 basehttp 10804 139977357776576 "GET /employee/dashboard/ HTTP/1.1" 200 26946
+WARNING 2025-09-16 14:17:50,585 log 10804 139977357776576 Not Found: /favicon.ico
+WARNING 2025-09-16 14:17:53,532 log 10804 139977366169280 Not Found: /employee/quick-order/
+WARNING 2025-09-16 14:17:53,533 basehttp 10804 139977366169280 "POST /employee/quick-order/ HTTP/1.1" 404 4731
+INFO 2025-09-16 14:17:58,224 basehttp 10804 139977144923840 "GET /employee/menu/ HTTP/1.1" 200 60098
+INFO 2025-09-16 14:17:58,510 basehttp 10804 139977144923840 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:18:10,513 basehttp 10804 139977144923840 "GET /employee/menu/ HTTP/1.1" 200 60098
+INFO 2025-09-16 14:18:10,745 basehttp 10804 139977144923840 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:18:12,275 basehttp 10804 139977144923840 "GET /employee/dashboard/ HTTP/1.1" 200 26946
+INFO 2025-09-16 14:18:17,478 basehttp 10804 139977144923840 "GET /employee/menu/ HTTP/1.1" 200 60098
+INFO 2025-09-16 14:18:17,806 basehttp 10804 139977144923840 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:18:27,512 basehttp 10804 139977144923840 "POST /orders/cart/update/ HTTP/1.1" 200 57
+INFO 2025-09-16 14:18:35,859 basehttp 10804 139977144923840 "GET /orders/place-order/ HTTP/1.1" 200 24539
+INFO 2025-09-16 14:18:40,373 basehttp 10804 139977144923840 "POST /orders/place-order/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:18:40,395 basehttp 10804 139977144923840 "GET /menu/view/ HTTP/1.1" 200 31783
+INFO 2025-09-16 14:18:40,718 basehttp 10804 139977144923840 "GET /orders/cart/get/ HTTP/1.1" 200 444
+INFO 2025-09-16 14:18:45,199 basehttp 10804 139977144923840 "POST /orders/cart/update/ HTTP/1.1" 200 57
+INFO 2025-09-16 14:18:49,145 basehttp 10804 139977144923840 "GET /employee/dashboard/ HTTP/1.1" 200 26946
+WARNING 2025-09-16 14:18:49,443 log 10804 139977144923840 Not Found: /favicon.ico
+INFO 2025-09-16 14:18:54,735 basehttp 10804 139977366169280 "GET /employee/menu/ HTTP/1.1" 200 60098
+WARNING 2025-09-16 14:18:54,982 log 10804 139977366169280 Not Found: /favicon.ico
+INFO 2025-09-16 14:18:55,035 basehttp 10804 139977366169280 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:18:58,132 basehttp 10804 139977366169280 "POST /orders/cart/update/ HTTP/1.1" 200 57
+INFO 2025-09-16 14:19:02,998 basehttp 10804 139977366169280 "POST /orders/cart/update/ HTTP/1.1" 200 57
+INFO 2025-09-16 14:19:09,639 basehttp 10804 139977366169280 "POST /orders/cart/update/ HTTP/1.1" 200 57
+ERROR 2025-09-16 14:19:22,337 log 10804 139977366169280 Internal Server Error: /orders/create-order/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/decorators.py", line 23, in _wrapper_view
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/orders/views.py", line 731, in create_order_from_cart
+    return render(request, "orders/create_order.html", context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: orders/create_order.html
+ERROR 2025-09-16 14:19:22,341 basehttp 10804 139977366169280 "GET /orders/create-order/ HTTP/1.1" 500 99487
+WARNING 2025-09-16 14:19:22,566 log 10804 139977366169280 Not Found: /favicon.ico
+INFO 2025-09-16 14:20:37,585 autoreload 10804 139977438859328 /home/codex/Desktop/project/apps/orders/views.py changed, reloading.
+INFO 2025-09-16 14:20:39,132 autoreload 11844 139969066537024 Watching for file changes with StatReloader
+INFO 2025-09-16 14:20:42,316 basehttp 11844 139969005876928 "GET /orders/create-order/ HTTP/1.1" 200 28108
+WARNING 2025-09-16 14:20:42,684 log 11844 139969005876928 Not Found: /favicon.ico
+INFO 2025-09-16 14:20:58,599 basehttp 11844 139969005876928 "POST /orders/create-order/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:20:58,701 basehttp 11844 139969005876928 "GET /menu/ HTTP/1.1" 200 60607
+INFO 2025-09-16 14:20:59,151 basehttp 11844 139969005876928 "GET /orders/cart/get/ HTTP/1.1" 200 992
+INFO 2025-09-16 14:21:15,300 basehttp 11844 139969005876928 "GET / HTTP/1.1" 302 0
+INFO 2025-09-16 14:21:15,325 basehttp 11844 139969005876928 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:21:15,517 basehttp 11844 139969005876928 "GET /employee/dashboard/ HTTP/1.1" 200 29038
+INFO 2025-09-16 14:21:21,452 basehttp 11844 139969005876928 "GET /auth/logout/confirm HTTP/1.1" 302 0
+INFO 2025-09-16 14:21:21,513 basehttp 11844 139969005876928 "GET /auth/login/ HTTP/1.1" 200 24358
+INFO 2025-09-16 14:21:26,698 basehttp 11844 139969005876928 "POST /auth/login/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:21:26,795 basehttp 11844 139969005876928 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15843
+WARNING 2025-09-16 14:21:27,108 log 11844 139969005876928 Not Found: /favicon.ico
+INFO 2025-09-16 14:21:29,344 basehttp 11844 139969005876928 "GET /canteen-admin/orders-management/ HTTP/1.1" 200 49521
+INFO 2025-09-16 14:22:15,299 basehttp 11844 139969005876928 "GET /canteen-admin/orders-management/ HTTP/1.1" 200 49521
+WARNING 2025-09-16 14:22:15,602 log 11844 139969005876928 Not Found: /favicon.ico
+INFO 2025-09-16 14:22:20,100 basehttp 11844 139969005876928 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 103744
+INFO 2025-09-16 14:22:31,119 basehttp 11844 139968991192768 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:22:31,310 basehttp 11844 139968991192768 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15469
+INFO 2025-09-16 14:22:43,473 basehttp 11844 139968991192768 "GET /menu/view/ HTTP/1.1" 200 31369
+WARNING 2025-09-16 14:22:43,779 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:22:43,823 basehttp 11844 139968991192768 "GET /orders/cart/get/ HTTP/1.1" 200 154
+WARNING 2025-09-16 14:22:48,941 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:22:51,112 basehttp 11844 139968991192768 "GET /canteen-admin/orders-management/ HTTP/1.1" 200 49521
+INFO 2025-09-16 14:30:19,188 basehttp 11844 139968991192768 "GET /canteen-admin/orders-management/ HTTP/1.1" 200 49565
+INFO 2025-09-16 14:30:19,265 basehttp 11844 139968991192768 "GET /static/js/utils.js HTTP/1.1" 200 25800
+WARNING 2025-09-16 14:30:19,786 log 11844 139968991192768 Not Found: /favicon.ico
+WARNING 2025-09-16 14:30:19,788 basehttp 11844 139968991192768 "GET /favicon.ico HTTP/1.1" 404 3802
+INFO 2025-09-16 14:30:28,618 basehttp 11844 139968991192768 "GET /canteen-admin/orders-management/ HTTP/1.1" 200 49565
+WARNING 2025-09-16 14:30:28,868 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:30:33,413 basehttp 11844 139968991192768 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 103744
+WARNING 2025-09-16 14:30:33,820 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:30:35,475 basehttp 11844 139968991192768 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:30:35,537 basehttp 11844 139968991192768 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15469
+WARNING 2025-09-16 14:30:35,965 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:30:51,532 basehttp 11844 139968991192768 "GET /orders/create-order/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:30:51,623 basehttp 11844 139968991192768 "GET /menu/ HTTP/1.1" 200 60508
+INFO 2025-09-16 14:30:52,021 basehttp 11844 139968991192768 "GET /static/js/scripts.js HTTP/1.1" 200 18718
+WARNING 2025-09-16 14:30:52,524 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:30:52,537 basehttp 11844 139968974407360 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:31:00,103 basehttp 11844 139968974407360 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15469
+WARNING 2025-09-16 14:31:04,737 log 11844 139968974407360 Not Found: /favicon.ico
+WARNING 2025-09-16 14:31:04,738 basehttp 11844 139968974407360 "GET /favicon.ico HTTP/1.1" 404 3802
+INFO 2025-09-16 14:31:19,926 basehttp 11844 139968974407360 "GET /menu/ HTTP/1.1" 200 60098
+INFO 2025-09-16 14:31:20,002 basehttp 11844 139968974407360 "GET /static/js/scripts.js HTTP/1.1" 304 0
+WARNING 2025-09-16 14:31:20,146 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:31:20,260 basehttp 11844 139968974407360 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:35:31,367 basehttp 11844 139968974407360 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 103744
+WARNING 2025-09-16 14:35:31,648 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:36:28,549 basehttp 11844 139968974407360 "POST /menu/add-item/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:36:28,580 basehttp 11844 139968974407360 "GET /menu/management/ HTTP/1.1" 200 63628
+WARNING 2025-09-16 14:36:28,824 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:36:41,543 basehttp 11844 139968974407360 "GET /menu/management/ HTTP/1.1" 200 63232
+WARNING 2025-09-16 14:36:41,813 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:36:57,122 basehttp 11844 139968974407360 "GET /menu/ HTTP/1.1" 200 65152
+INFO 2025-09-16 14:36:57,206 basehttp 11844 139968974407360 "GET /media/menu_items/dessert1.jpeg HTTP/1.1" 200 34176
+INFO 2025-09-16 14:36:57,294 basehttp 11844 139968991192768 "GET /static/js/scripts.js HTTP/1.1" 304 0
+INFO 2025-09-16 14:36:57,516 basehttp 11844 139968991192768 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:37:40,628 basehttp 11844 139968974407360 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 110507
+INFO 2025-09-16 14:37:40,702 basehttp 11844 139968991192768 "GET /media/menu_items/dessert1.jpeg HTTP/1.1" 304 0
+INFO 2025-09-16 14:37:51,743 basehttp 11844 139968974407360 "POST /orders/cart/update/ HTTP/1.1" 200 57
+INFO 2025-09-16 14:38:01,428 basehttp 11844 139968974407360 "GET /orders/create-order/ HTTP/1.1" 200 26255
+WARNING 2025-09-16 14:38:01,692 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:38:13,291 basehttp 11844 139968974407360 "POST /orders/create-order/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:38:13,358 basehttp 11844 139968974407360 "GET /menu/ HTTP/1.1" 200 65661
+INFO 2025-09-16 14:38:13,533 basehttp 11844 139968974407360 "GET /static/js/scripts.js HTTP/1.1" 304 0
+INFO 2025-09-16 14:38:13,597 basehttp 11844 139968991192768 "GET /media/menu_items/dessert1.jpeg HTTP/1.1" 304 0
+WARNING 2025-09-16 14:38:13,687 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:38:13,787 basehttp 11844 139968974407360 "GET /orders/cart/get/ HTTP/1.1" 200 444
+INFO 2025-09-16 14:38:18,975 basehttp 11844 139968974407360 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 110507
+INFO 2025-09-16 14:38:23,600 basehttp 11844 139968974407360 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:38:23,653 basehttp 11844 139968974407360 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15469
+WARNING 2025-09-16 14:38:23,908 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:38:28,001 basehttp 11844 139968974407360 "GET /canteen-admin/orders-management/ HTTP/1.1" 200 49565
+INFO 2025-09-16 14:38:28,115 basehttp 11844 139968974407360 "GET /static/js/utils.js HTTP/1.1" 304 0
+INFO 2025-09-16 14:38:49,703 basehttp 11844 139968974407360 "GET /orders/create-order/ HTTP/1.1" 200 26255
+WARNING 2025-09-16 14:38:50,145 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:39:11,542 basehttp 11844 139968974407360 "GET /menu/ HTTP/1.1" 200 65152
+INFO 2025-09-16 14:39:11,825 basehttp 11844 139968974407360 "GET /orders/cart/get/ HTTP/1.1" 200 444
+INFO 2025-09-16 14:49:46,246 basehttp 11844 139968974407360 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 110507
+INFO 2025-09-16 14:49:46,488 basehttp 11844 139968974407360 "GET /media/menu_items/dessert1.jpeg HTTP/1.1" 200 34176
+WARNING 2025-09-16 14:49:46,585 log 11844 139968974407360 Not Found: /favicon.ico
+WARNING 2025-09-16 14:49:46,587 basehttp 11844 139968974407360 "GET /favicon.ico HTTP/1.1" 404 3802
+INFO 2025-09-16 14:50:18,506 basehttp 11844 139968974407360 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:50:18,563 basehttp 11844 139968974407360 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15469
+WARNING 2025-09-16 14:50:18,874 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:50:35,657 basehttp 11844 139968974407360 "GET /canteen-admin/orders-management/ HTTP/1.1" 200 49565
+INFO 2025-09-16 14:50:35,776 basehttp 11844 139968974407360 "GET /static/js/utils.js HTTP/1.1" 304 0
+WARNING 2025-09-16 14:50:36,071 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:51:34,324 basehttp 11844 139968974407360 "GET /auth/logout/confirm HTTP/1.1" 302 0
+INFO 2025-09-16 14:51:34,425 basehttp 11844 139968974407360 "GET /auth/login/ HTTP/1.1" 200 24358
+WARNING 2025-09-16 14:51:35,138 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:51:54,208 basehttp 11844 139968974407360 "POST /auth/login/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:51:54,351 basehttp 11844 139968974407360 "GET /employee/dashboard/ HTTP/1.1" 200 29413
+WARNING 2025-09-16 14:51:54,707 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:52:15,873 basehttp 11844 139968974407360 "GET /employee/menu/ HTTP/1.1" 200 65152
+INFO 2025-09-16 14:52:16,201 basehttp 11844 139968974407360 "GET /media/menu_items/salade.jpeg HTTP/1.1" 200 17439
+INFO 2025-09-16 14:52:16,214 basehttp 11844 139968622098112 "GET /media/menu_items/download.jpeg HTTP/1.1" 200 12347
+INFO 2025-09-16 14:52:16,220 basehttp 11844 139968974407360 "GET /media/menu_items/dessert1.jpeg HTTP/1.1" 200 34176
+INFO 2025-09-16 14:52:16,247 basehttp 11844 139968991192768 "GET /media/menu_items/salade_15D3Dnb.jpeg HTTP/1.1" 200 17439
+INFO 2025-09-16 14:52:16,261 basehttp 11844 139969005876928 "GET /media/menu_items/salade_17Or0QF.jpeg HTTP/1.1" 200 17439
+INFO 2025-09-16 14:52:16,275 basehttp 11844 139968982800064 "GET /media/menu_items/download_JKKP3ax.jpeg HTTP/1.1" 200 12347
+INFO 2025-09-16 14:52:16,296 basehttp 11844 139968613705408 "GET /media/menu_items/meat.jpeg HTTP/1.1" 200 11167
+INFO 2025-09-16 14:52:16,401 basehttp 11844 139968991192768 "GET /static/js/scripts.js HTTP/1.1" 304 0
+WARNING 2025-09-16 14:52:16,593 log 11844 139969005876928 Not Found: /favicon.ico
+INFO 2025-09-16 14:52:16,608 basehttp 11844 139968991192768 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 14:52:30,168 basehttp 11844 139968974407360 "GET /orders/place-order/ HTTP/1.1" 200 24539
+WARNING 2025-09-16 14:52:30,437 log 11844 139968991192768 Not Found: /favicon.ico
+INFO 2025-09-16 14:52:44,650 basehttp 11844 139968974407360 "GET /employee/dashboard/ HTTP/1.1" 200 29039
+WARNING 2025-09-16 14:52:44,947 log 11844 139968622098112 Not Found: /favicon.ico
+INFO 2025-09-16 14:52:46,442 basehttp 11844 139968974407360 "GET /employee/notifications/ HTTP/1.1" 200 26577
+WARNING 2025-09-16 14:52:46,745 log 11844 139968982800064 Not Found: /favicon.ico
+INFO 2025-09-16 14:53:43,856 basehttp 11844 139968974407360 "GET /auth/logout/confirm HTTP/1.1" 302 0
+INFO 2025-09-16 14:53:43,875 basehttp 11844 139968974407360 "GET /auth/login/ HTTP/1.1" 200 24358
+WARNING 2025-09-16 14:53:44,183 log 11844 139968613705408 Not Found: /favicon.ico
+WARNING 2025-09-16 14:53:44,187 basehttp 11844 139968613705408 "GET /favicon.ico HTTP/1.1" 404 3802
+INFO 2025-09-16 14:53:53,002 basehttp 11844 139968974407360 "POST /auth/login/ HTTP/1.1" 302 0
+INFO 2025-09-16 14:53:53,105 basehttp 11844 139968974407360 "GET /system-admin/dashboard/ HTTP/1.1" 200 34789
+WARNING 2025-09-16 14:53:54,566 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 14:54:07,515 basehttp 11844 139968974407360 "GET /system-admin/user-management/ HTTP/1.1" 200 56663
+WARNING 2025-09-16 14:54:07,861 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:54:28,300 basehttp 11844 139968974407360 "GET /system-admin/system-config/ HTTP/1.1" 200 55929
+WARNING 2025-09-16 14:54:28,683 log 11844 139968974407360 Not Found: /favicon.ico
+ERROR 2025-09-16 14:54:41,767 log 11844 139968974407360 Internal Server Error: /system-admin/analytics/
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 880, in _resolve_lookup
+    current = current[bit]
+              ~~~~~~~^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/context.py", line 83, in __getitem__
+    raise KeyError(key)
+KeyError: 'completion_rate'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 886, in _resolve_lookup
+    if isinstance(current, BaseContext) and getattr(
+                                            ^^^^^^^^
+AttributeError: type object 'RequestContext' has no attribute 'completion_rate'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 896, in _resolve_lookup
+    current = current[int(bit)]
+                      ^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'completion_rate'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/contrib/auth/decorators.py", line 23, in _wrapper_view
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/apps/reports/views.py", line 236, in system_admin_reports
+    return render(request, 'system_admin/analytics.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/shortcuts.py", line 24, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/backends/django.py", line 61, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 175, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader_tags.py", line 157, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 167, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/loader_tags.py", line 63, in render
+    result = block.nodelist.render(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1005, in <listcomp>
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 966, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 1064, in render
+    output = self.filter_expression.resolve(context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 736, in resolve
+    arg_vals.append(arg.resolve(context))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 847, in resolve
+    value = self._resolve_lookup(context)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codex/Desktop/project/canteen_env/lib/python3.11/site-packages/django/template/base.py", line 903, in _resolve_lookup
+    raise VariableDoesNotExist(
+django.template.base.VariableDoesNotExist: Failed lookup for key [completion_rate] in [{'True': True, 'False': False, 'None': None}, {}, {}]
+ERROR 2025-09-16 14:54:41,772 basehttp 11844 139968974407360 "GET /system-admin/analytics/ HTTP/1.1" 500 208102
+WARNING 2025-09-16 14:54:42,122 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:54:56,019 basehttp 11844 139968974407360 "GET /employee/profile/ HTTP/1.1" 200 16633
+WARNING 2025-09-16 14:54:56,405 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 14:55:09,222 basehttp 11844 139968974407360 "GET /employee/settings/ HTTP/1.1" 200 15950
+WARNING 2025-09-16 14:55:09,464 log 11844 139968974407360 Not Found: /favicon.ico
+INFO 2025-09-16 15:09:26,436 basehttp 11844 139968613705408 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 110510
+INFO 2025-09-16 15:09:26,670 basehttp 11844 139968613705408 "GET /media/menu_items/dessert1.jpeg HTTP/1.1" 200 34176
+WARNING 2025-09-16 15:09:26,966 log 11844 139968613705408 Not Found: /favicon.ico
+WARNING 2025-09-16 15:11:40,117 log 11844 139968613705408 Forbidden: /menu/add-item/
+WARNING 2025-09-16 15:11:40,119 basehttp 11844 139968613705408 "POST /menu/add-item/ HTTP/1.1" 403 25
+WARNING 2025-09-16 15:11:40,546 log 11844 139968974407360 Not Found: /favicon.ico
+WARNING 2025-09-16 15:11:40,548 basehttp 11844 139968974407360 "GET /favicon.ico HTTP/1.1" 404 3802
+INFO 2025-09-16 15:11:56,501 basehttp 11844 139968613705408 "GET /auth/logout/confirm HTTP/1.1" 302 0
+INFO 2025-09-16 15:11:56,522 basehttp 11844 139968613705408 "GET /auth/login/ HTTP/1.1" 200 24358
+WARNING 2025-09-16 15:11:56,894 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:12:01,348 basehttp 11844 139968613705408 "POST /auth/login/ HTTP/1.1" 302 0
+INFO 2025-09-16 15:12:01,400 basehttp 11844 139968613705408 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15843
+WARNING 2025-09-16 15:12:01,854 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:12:04,973 basehttp 11844 139968613705408 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 110507
+WARNING 2025-09-16 15:12:05,345 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:12:25,357 basehttp 11844 139968613705408 "POST /menu/add-item/ HTTP/1.1" 302 0
+INFO 2025-09-16 15:12:25,484 basehttp 11844 139968613705408 "GET /menu/management/ HTTP/1.1" 200 63630
+WARNING 2025-09-16 15:12:25,861 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:12:31,510 basehttp 11844 139968613705408 "GET /menu/management/ HTTP/1.1" 200 63232
+WARNING 2025-09-16 15:12:31,743 log 11844 139968613705408 Not Found: /favicon.ico
+WARNING 2025-09-16 15:12:31,745 basehttp 11844 139968613705408 "GET /favicon.ico HTTP/1.1" 404 3802
+INFO 2025-09-16 15:13:07,464 basehttp 11844 139968613705408 "POST /menu/add-item/ HTTP/1.1" 302 0
+INFO 2025-09-16 15:13:07,497 basehttp 11844 139968613705408 "GET /menu/management/ HTTP/1.1" 200 63625
+WARNING 2025-09-16 15:13:07,768 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:13:21,896 basehttp 11844 139968613705408 "GET /dashboard/ HTTP/1.1" 302 0
+INFO 2025-09-16 15:13:21,953 basehttp 11844 139968613705408 "GET /canteen-admin/dashboard/ HTTP/1.1" 200 15469
+WARNING 2025-09-16 15:13:22,237 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:13:24,385 basehttp 11844 139968613705408 "GET /canteen-admin/menu-management/ HTTP/1.1" 200 124222
+INFO 2025-09-16 15:13:24,498 basehttp 11844 139968982800064 "GET /media/menu_items/dessert1.jpeg HTTP/1.1" 200 34176
+INFO 2025-09-16 15:13:24,502 basehttp 11844 139968613705408 "GET /media/menu_items/drink2.jpeg HTTP/1.1" 200 40426
+INFO 2025-09-16 15:13:40,348 basehttp 11844 139968613705408 "GET /auth/logout/confirm HTTP/1.1" 302 0
+INFO 2025-09-16 15:13:40,366 basehttp 11844 139968613705408 "GET /auth/login/ HTTP/1.1" 200 24358
+WARNING 2025-09-16 15:13:40,873 log 11844 139968982800064 Not Found: /favicon.ico
+INFO 2025-09-16 15:13:45,825 basehttp 11844 139968613705408 "POST /auth/login/ HTTP/1.1" 302 0
+INFO 2025-09-16 15:13:45,879 basehttp 11844 139968613705408 "GET /employee/dashboard/ HTTP/1.1" 200 29413
+WARNING 2025-09-16 15:13:46,216 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:13:48,593 basehttp 11844 139968613705408 "GET /employee/menu/ HTTP/1.1" 200 74835
+INFO 2025-09-16 15:13:48,732 basehttp 11844 139968613705408 "GET /static/js/scripts.js HTTP/1.1" 304 0
+INFO 2025-09-16 15:13:48,828 basehttp 11844 139968613705408 "GET /media/menu_items/drink2.jpeg HTTP/1.1" 200 40426
+INFO 2025-09-16 15:13:49,093 basehttp 11844 139968613705408 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 15:14:02,694 basehttp 11844 139968613705408 "GET /orders/history/ HTTP/1.1" 200 20053
+WARNING 2025-09-16 15:14:03,051 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:14:19,191 basehttp 11844 139968613705408 "GET /employee/menu/ HTTP/1.1" 200 74835
+INFO 2025-09-16 15:14:19,465 basehttp 11844 139968613705408 "GET /media/menu_items/drink2.jpeg HTTP/1.1" 304 0
+WARNING 2025-09-16 15:14:19,597 log 11844 139968613705408 Not Found: /favicon.ico
+INFO 2025-09-16 15:14:19,623 basehttp 11844 139968982800064 "GET /orders/cart/get/ HTTP/1.1" 200 154
+INFO 2025-09-16 15:14:21,954 basehttp 11844 139968982800064 "POST /orders/cart/update/ HTTP/1.1" 200 57
+INFO 2025-09-16 15:14:24,960 basehttp 11844 139968982800064 "GET /orders/create-order/ HTTP/1.1" 200 26255
+WARNING 2025-09-16 15:14:25,344 log 11844 139968982800064 Not Found: /favicon.ico
+INFO 2025-09-16 15:14:41,128 basehttp 11844 139968982800064 "POST /orders/create-order/ HTTP/1.1" 302 0
+INFO 2025-09-16 15:14:41,181 basehttp 11844 139968982800064 "GET /menu/ HTTP/1.1" 200 75344
+INFO 2025-09-16 15:14:41,416 basehttp 11844 139968982800064 "GET /media/menu_items/drink2.jpeg HTTP/1.1" 200 40426
+WARNING 2025-09-16 15:14:41,525 log 11844 139968982800064 Not Found: /favicon.ico
+INFO 2025-09-16 15:14:41,640 basehttp 11844 139968982800064 "GET /orders/cart/get/ HTTP/1.1" 200 434
+INFO 2025-09-16 15:14:47,974 basehttp 11844 139968982800064 "GET /orders/history/ HTTP/1.1" 200 21984
