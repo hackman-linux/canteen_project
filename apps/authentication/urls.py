@@ -50,7 +50,11 @@ canteen_admin_urlpatterns = [
     # You may need to create this view or use an existing one like send_system_notification
     path('notifications/create/', notifications_views.send_system_notification, name='notifications_create'),
     path('reports/', reports_views.canteen_admin_reports, name='reports'),
+    path("notifications/", notifications_views.notifications_page, name="notifications_page"),
     path('dashboard-data/', views.canteen_admin_dashboard_data, name='dashboard_data'),
+    path('admin/confirm/<uuid:order_id>/', orders_views.confirm_order, name='confirm_order'),
+    path('admin/update-status/<uuid:order_id>/', orders_views.update_order_status, name='update_order_status'),
+    path('admin/cancel/<uuid:order_id>/', orders_views.cancel_order, name='cancel_order'),
     # path('order-queue/', orders_views.order_queue, name='order_queue'),
     # path('update-order-status/', orders_views.update_order_status, name='update_order_status'),
     # path('add-menu-item/', menu_views.add_menu_item, name='add_menu_item'),

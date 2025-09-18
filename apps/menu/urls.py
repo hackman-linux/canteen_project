@@ -24,6 +24,9 @@ urlpatterns = [
     path('management/', views.MenuManagementView.as_view(), name='menu_management'),
     path('inventory/', views.inventory_management, name='inventory'),
     path('statistics/', views.MenuStatisticsView.as_view(), name='statistics'),
+    # path('management/', MenuManagementView.as_view(), name='menu_management'),
+    path('item/<uuid:item_id>/edit/', views.update_menu_item, name='edit_item'),
+    path('category/add/', views.create_menu_category, name='add_category'),
     
     # Admin Actions
     path('add-item/', views.add_menu_item, name='add_item'),

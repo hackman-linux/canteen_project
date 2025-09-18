@@ -12,8 +12,8 @@ urlpatterns = [
     # path('api/', views.notifications_api, name='notifications_api'),
     path('preferences/', views.notification_preferences, name='notification_preferences'),
     path('real-time/', views.get_real_time_notifications, name='real_time'),
-     path('stats/', views.notification_stats_api, name='stats_api'),
-
+    path('stats/', views.notification_stats_api, name='stats_api'),
+    path("notifications/", views.notifications_page, name="notifications_page"),
 
     # System notification management
     path('system/management/', views.system_notification_management, name='system_notification_management'),

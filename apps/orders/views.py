@@ -1,4 +1,5 @@
 import uuid
+from django.core.paginator import Paginator
 from decimal import Decimal
 from apps.payments.models import WalletTransaction
 from django import forms
@@ -13,6 +14,9 @@ from django.db.models import Sum, Count
 from .models import Order, OrderItem, OrderHistory, ReorderItem, OrderQueue
 from apps.menu.models import MenuItem
 from apps.notifications.models import Notification
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class OrderCheckoutForm(forms.ModelForm):
@@ -279,10 +283,16 @@ def process_topup(request):
 @login_required
 @user_passes_test(is_canteen_admin)
 def orders_management(request):
-    """Canteen admin view showing pending orders to validate/cancel."""
-    pending = Order.objects.filter(status=Order.STATUS_PENDING).order_by("created_at")
-    validated = Order.objects.filter(status=Order.STATUS_VALIDATED).order_by("-validated_at")[:30]
-    return render(request, "canteen_admin/orders_management.html", {"pending_orders": pending, "validated_orders": validated})
+    # ... (filters, queryset, counts from previous response)
+    # Ensure pending_orders_list uses employee
+    pending_orders_list = Order.objects.filter(status='pending').select_related('employee').prefetch_related('items').order_by('created_at')
+    
+    context = {
+        # ... (from previous)
+        'pending_orders_list': pending_orders_list,
+        'orders': page_obj,
+    }
+    return render(request, 'orders/orders_management.html', context)
 
 
 @login_required
@@ -888,3 +898,233 @@ Enterprise Canteen System
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f"Failed to send order notification email: {str(e)}")
+
+@user_passes_test(is_canteen_admin)
+def orders_management(request):
+    """
+    View for Canteen Admin to manage orders.
+    Handles filtering, pagination, and counts for the orders_management.html template.
+    """
+    # Get filter parameters from GET request
+    status_filter = request.GET.get('status', 'all')
+    payment_filter = request.GET.get('payments', 'all')  # Matches template's 'All Payments'
+    time_filter = request.GET.get('time', 'all')  # Template has 'Today', etc., but set default to 'all'
+    search_query = request.GET.get('search', '')
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    sort_by = request.GET.get('sort', 'Newest First')  # Template has sorting options
+
+    # Base queryset
+    orders_qs = Order.objects.select_related('employee').prefetch_related('items__menu_item').all()
+
+    # Apply status filter
+    if status_filter != 'all':
+        orders_qs = orders_qs.filter(status=status_filter.lower())  # Assuming status is lowercase in DB
+
+    # Apply payment filter
+    if payment_filter != 'all':
+        orders_qs = orders_qs.filter(payment_status=payment_filter.lower())
+
+    # Apply time filter
+    today = timezone.now().date()
+    if time_filter == 'today':
+        orders_qs = orders_qs.filter(created_at__date=today)
+    elif time_filter == 'this_week':
+        start_of_week = today - timedelta(days=today.weekday())
+        orders_qs = orders_qs.filter(created_at__date__gte=start_of_week)
+    elif time_filter == 'this_month':
+        start_of_month = today.replace(day=1)
+        orders_qs = orders_qs.filter(created_at__gte=start_of_month)
+
+    # Custom date range
+    if from_date:
+        orders_qs = orders_qs.filter(created_at__date__gte=from_date)
+    if to_date:
+        orders_qs = orders_qs.filter(created_at__date__lte=to_date)
+
+    # Search filter (assuming employee has first_name, last_name, email; adjust if model uses 'customer')
+    if search_query:
+        orders_qs = orders_qs.filter(
+            Q(order_number__icontains=search_query) |
+            Q(employee__first_name__icontains=search_query) |
+            Q(employee__last_name__icontains=search_query) |
+            Q(employee__email__icontains=search_query)
+        )
+
+    # Apply sorting
+    if sort_by == 'Newest First':
+        orders_qs = orders_qs.order_by('-created_at')
+    elif sort_by == 'Oldest First':
+        orders_qs = orders_qs.order_by('created_at')
+    elif sort_by == 'Amount (High to Low)':
+        orders_qs = orders_qs.order_by('-total_amount')
+    elif sort_by == 'Amount (Low to High)':
+        orders_qs = orders_qs.order_by('total_amount')
+    elif sort_by == 'By Status':
+        orders_qs = orders_qs.order_by('status')
+
+    # Calculate counts (system-wide, not filtered)
+    pending_count = Order.objects.filter(status='pending').count()
+    preparing_count = Order.objects.filter(status='preparing').count()
+    ready_count = Order.objects.filter(status='ready').count()
+    completed_today = Order.objects.filter(status='completed', created_at__date=today).count()
+
+    # Pending orders list for priority queue (oldest first)
+    pending_orders_list = Order.objects.filter(status='pending').order_by('created_at')
+
+    # Pagination
+    paginator = Paginator(orders_qs, 20)  # 20 orders per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Context for template
+    context = {
+        'pending_count': pending_count,
+        'preparing_count': preparing_count,
+        'ready_count': ready_count,
+        'completed_today': completed_today,
+        'pending_orders_list': pending_orders_list,
+        'orders': page_obj,  # Paginated orders
+        # Pass back filters for template to highlight selected
+        'status': status_filter,
+        'payments': payment_filter,
+        'time': time_filter,
+        'search': search_query,
+        'from_date': from_date,
+        'to_date': to_date,
+        'sort': sort_by,
+    }
+
+    return render(request, 'canteen_admin/orders_management.html', context)
+
+def is_canteen_admin(user):
+    return user.is_authenticated and (getattr(user, "role", None) == "canteen_admin" or user.is_superuser)
+
+@user_passes_test(is_canteen_admin)
+def confirm_order(request, order_id):
+    """Confirm a pending order."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
+
+    order = get_object_or_404(Order, id=order_id)
+    if order.status != 'pending':
+        return JsonResponse({'success': False, 'message': 'Order is not in pending status'}, status=400)
+
+    try:
+        order.status = 'confirmed'
+        order.save()
+        OrderHistory.objects.create(
+            order=order,
+            status_from='pending',
+            status_to='confirmed',
+            changed_by=request.user,
+            notes='Order confirmed by admin'
+        )
+        Notification.objects.create(
+            title=f"Order #{order.order_number} Confirmed",
+            message=f"Your order #{order.order_number} has been confirmed and is being prepared.",
+            notification_type='order_status',
+            target_user=order.employee,
+            priority='normal',
+            order=order,
+            created_by=request.user,
+        )
+        return JsonResponse({'success': True, 'message': f'Order #{order.order_number} confirmed'})
+    except Exception as e:
+        logger.error(f"Error confirming order {order_id}: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
+@user_passes_test(is_canteen_admin)
+def update_order_status(request, order_id):
+    """Update order status via AJAX."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
+
+    order = get_object_or_404(Order, id=order_id)
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        estimated_ready_time = data.get('estimated_ready_time')
+        notes = data.get('notes', '')
+        notify_customer = data.get('notify_customer', False)
+
+        if new_status not in ['confirmed', 'preparing', 'ready', 'completed', 'cancelled']:
+            return JsonResponse({'success': False, 'message': 'Invalid status'}, status=400)
+
+        old_status = order.status
+        order.status = new_status
+        if estimated_ready_time:
+            order.estimated_ready_time = estimated_ready_time
+        order.save()
+
+        OrderHistory.objects.create(
+            order=order,
+            status_from=old_status,
+            status_to=new_status,
+            changed_by=request.user,
+            notes=notes or f"Status updated to {new_status}"
+        )
+
+        if notify_customer:
+            Notification.objects.create(
+                title=f"Order #{order.order_number} Updated",
+                message=f"Your order #{order.order_number} is now {new_status}. {notes}",
+                notification_type='order_status',
+                target_user=order.employee,
+                priority='normal',
+                order=order,
+                created_by=request.user,
+            )
+
+        return JsonResponse({'success': True, 'message': f'Order #{order.order_number} updated to {new_status}'})
+    except Exception as e:
+        logger.error(f"Error updating order {order_id}: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
+@user_passes_test(is_canteen_admin)
+def cancel_order(request, order_id):
+    """Cancel an order via AJAX."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
+
+    order = get_object_or_404(Order, id=order_id)
+    try:
+        data = json.loads(request.body)
+        reason = data.get('reason')
+        notes = data.get('notes', '')
+        process_refund = data.get('process_refund', False)
+
+        if reason not in ['customer_request', 'payment_failed', 'item_not_available', 'kitchen_issue', 'other']:
+            return JsonResponse({'success': False, 'message': 'Invalid cancellation reason'}, status=400)
+
+        old_status = order.status
+        order.status = 'cancelled'
+        order.save()
+
+        OrderHistory.objects.create(
+            order=order,
+            status_from=old_status,
+            status_to='cancelled',
+            changed_by=request.user,
+            notes=f"Cancelled: {reason}. {notes}"
+        )
+
+        Notification.objects.create(
+            title=f"Order #{order.order_number} Cancelled",
+            message=f"Your order #{order.order_number} was cancelled due to {reason}. {notes}",
+            notification_type='order_status',
+            target_user=order.employee,
+            priority='normal',
+            order=order,
+            created_by=request.user,
+        )
+
+        if process_refund and order.payment_status == 'paid':
+            # Implement refund logic here (e.g., via CamPay API if integrated)
+            # For now, just log it
+            logger.info(f"Refund requested for order {order.order_number}")
+
+        return JsonResponse({'success': True, 'message': f'Order #{order.order_number} cancelled'})
+    except Exception as e:
+        logger.error(f"Error cancelling order {order_id}: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)

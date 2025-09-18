@@ -23,7 +23,7 @@
     <span class="badge bg-danger rounded-pill">{{ low_stock_items }}</span>
     {% endif %}
 </a>
-<a class="nav-link active" href="{% url 'canteen_admin:notifications_create' %}">
+<a class="nav-link active" href="{% url 'canteen_admin:notifications_page' %}">
     <i class="bi bi-bell me-2"></i>Notifications
 </a>
 <a class="nav-link" href="{% url 'canteen_admin:reports' %}">
@@ -566,42 +566,108 @@ function previewNotificationModal() {
     previewModal.show();
 }
 
-function filterNotifications() {
+// Helper: CSRF token getter
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 🔍 Filter notifications
+async function filterNotifications() {
     const typeFilter = document.getElementById('filterByType').value;
     const statusFilter = document.getElementById('filterByStatus').value;
-    
-    // Implementation for filtering notifications
-    // This would typically make an AJAX request to filter results
-    console.log('Filtering by type:', typeFilter, 'status:', statusFilter);
-}
 
-function viewNotification(id) {
-    // View notification details
-    console.log('Viewing notification:', id);
-}
-
-function sendNotification(id) {
-    if (confirm('Are you sure you want to send this notification?')) {
-        // Send notification
-        console.log('Sending notification:', id);
+    try {
+        const res = await fetch(`/admin/notifications/filter/?type=${typeFilter}&status=${statusFilter}`);
+        if (res.ok) {
+            const html = await res.text();
+            document.getElementById('notificationsTable').innerHTML =
+                new DOMParser().parseFromString(html, 'text/html')
+                               .getElementById('notificationsTable').innerHTML;
+        } else {
+            alert('Failed to filter notifications');
+        }
+    } catch (err) {
+        console.error('Filter error:', err);
     }
 }
 
+// 👁 View a notification
+async function viewNotification(id) {
+    try {
+        const res = await fetch(`/admin/notifications/${id}/`);
+        if (res.ok) {
+            const data = await res.json();
+            alert(`Title: ${data.title}\n\nMessage: ${data.message}`);
+        } else {
+            alert('Failed to fetch notification details');
+        }
+    } catch (err) {
+        console.error('View error:', err);
+    }
+}
+
+// 📤 Send notification
+async function sendNotification(id) {
+    if (!confirm('Are you sure you want to send this notification?')) return;
+
+    try {
+        const res = await fetch(`/admin/notifications/send/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert('Failed to send notification');
+        }
+    } catch (err) {
+        console.error('Send error:', err);
+    }
+}
+
+// ✏️ Edit notification (redirect to form page)
 function editNotification(id) {
-    // Edit notification
-    console.log('Editing notification:', id);
+    window.location.href = `/admin/notifications/${id}/edit/`;
 }
 
-function deleteNotification(id) {
-    if (confirm('Are you sure you want to delete this notification?')) {
-        // Delete notification
-        console.log('Deleting notification:', id);
+// 🗑 Delete notification
+async function deleteNotification(id) {
+    if (!confirm('Are you sure you want to delete this notification?')) return;
+
+    try {
+        const res = await fetch(`/admin/notifications/delete/${id}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert('Failed to delete notification');
+        }
+    } catch (err) {
+        console.error('Delete error:', err);
     }
 }
 
+// 🔄 Refresh
 function refreshNotifications() {
-    // Refresh notifications list
     location.reload();
 }
+
 </script>
 {% endblock %}

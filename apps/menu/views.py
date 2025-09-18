@@ -110,41 +110,50 @@ def menu_view(request):
 # Replace your existing menu_management function and MenuManagementView with this:
 
 class MenuManagementView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    """Canteen admin menu management interface"""
-    template_name = 'canteen_admin/menu_management.html'
+    template_name = 'menu/menu_management.html'
     
     def test_func(self):
         return self.request.user.is_canteen_admin() or self.request.user.is_superuser
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Filters
+        category_filter = self.request.GET.get('category', 'all')
+        status_filter = self.request.GET.get('status', 'all')
+        search_query = self.request.GET.get('search', '')
         
-        # Get all menu items with related data
+        # Base queryset
         menu_items = MenuItem.objects.select_related('category').annotate(
-            orders_today=Count(
-                'order_items',
-                filter=Q(
-                    order_items__order__created_at__date=timezone.now().date(),
-                    order_items__order__status__in=['confirmed', 'preparing', 'ready', 'completed']
-                )
-            )
-        ).order_by('-created_at')
+            orders_today=Count('order_items__order__created_at__date=timezone.now().date')
+        )
         
-        # Categories - make sure to get active categories
-        categories = MenuCategory.objects.filter(is_active=True).annotate(
-            items_count=Count('menu_items')
-        ).order_by('display_order')
-    
-        # DEBUG: Print categories to console
-        print(f"DEBUG: Found {categories.count()} categories")
-        for cat in categories:
-            print(f"  - {cat.name} (ID: {cat.id})")
-    
-        context['categories'] = categories
-        context['total_categories'] = categories.count()
-    
+        # Apply filters
+        if category_filter != 'all':
+            menu_items = menu_items.filter(category_id=category_filter)
+        if status_filter != 'all':
+            menu_items = menu_items.filter(is_available=(status_filter == 'available'))
+        if search_query:
+            menu_items = menu_items.filter(Q(name__icontains=search_query) | Q(description__icontains=search_query))
+        
+        # Pagination
+        paginator = Paginator(menu_items, 20)
+        page_number = self.request.GET.get('page')
+        context['menu_items'] = paginator.get_page(page_number)
+        
+        # Stats
+        context['total_items'] = MenuItem.objects.count()
+        context['available_items'] = MenuItem.objects.filter(is_available=True).count()
+        context['total_categories'] = MenuCategory.objects.count()
+        context['categories'] = MenuCategory.objects.all()
+        
+        # Preserve filters in context
+        context.update({
+            'category_filter': category_filter,
+            'status_filter': status_filter,
+            'search_query': search_query,
+        })
+        
         return context
-        
         # Menu statistics
         total_items = menu_items.count()
         available_items = menu_items.filter(is_available=True).count()

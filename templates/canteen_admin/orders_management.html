@@ -24,7 +24,7 @@
     <span class="badge bg-danger rounded-pill">{{ low_stock_items }}</span>
     {% endif %}
 </a>
-<a class="nav-link" href="{% url 'canteen_admin:notifications_create' %}">
+<a class="nav-link" href="{% url 'canteen_admin:notifications_page' %}">
     <i class="bi bi-bell me-2"></i>Notifications
 </a>
 <a class="nav-link" href="{% url 'canteen_admin:reports' %}">
@@ -167,58 +167,43 @@
     </div>
 </div>
 
-<!-- Orders Queue - Pending Orders Priority -->
+<!-- Priority Queue - Pending Orders -->
 {% if pending_orders_list %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>Priority Queue - Pending Orders
-                    <span class="badge bg-dark ms-2">{{ pending_orders_list|length }}</span>
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    {% for order in pending_orders_list %}
-                    <div class="col-md-4">
-                        <div class="card border-start border-warning border-3">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title mb-0">#{{ order.order_number }}</h6>
-                                    <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
-                                </div>
-                                <p class="card-text mb-2">
-                                    <strong>{{ order.customer.first_name }} {{ order.customer.last_name }}</strong><br>
-                                    <small class="text-muted">{{ order.created_at|date:"H:i" }} - {{ order.items.count }} items</small>
-                                </p>
-                                <p class="card-text">
-                                    <strong>{{ order.total_amount }} XAF</strong>
-                                    {% if order.payment_status == 'paid' %}
-                                    <span class="badge bg-success ms-2">Paid</span>
-                                    {% else %}
-                                    <span class="badge bg-danger ms-2">Payment Pending</span>
-                                    {% endif %}
-                                </p>
-                                <div class="btn-group btn-group-sm w-100">
-                                    <button class="btn btn-success" onclick="confirmOrder('{{ order.id }}')">
-                                        <i class="bi bi-check"></i> Confirm
-                                    </button>
-                                    <button class="btn btn-info" onclick="viewOrderDetails('{{ order.id }}')">
-                                        <i class="bi bi-eye"></i> Details
-                                    </button>
-                                    <button class="btn btn-outline-danger" onclick="cancelOrder('{{ order.id }}')">
-                                        <i class="bi bi-x"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+<div class="card mb-4">
+  <div class="card-header">
+    <h5>Priority Queue - Pending Orders <span class="badge bg-danger">{{ pending_orders_list|length }}</span></h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table">
+        {% for order in pending_orders_list %}
+        <tr>
+          <td>
+            <strong>#{{ order.order_number }}</strong><br>
+            <span class="badge bg-warning">{{ order.get_status_display }}</span>
+          </td>
+          <td>
+            {{ order.employee.first_name }} {{ order.employee.last_name }}<br>
+            {{ order.created_at|date:"H:i" }} - {{ order.items.count }} items
+          </td>
+          <td>
+            {{ order.total_amount }} XAF<br>
+            {% if order.payment_status == 'paid' %}
+              <span class="badge bg-success">Paid</span>
+            {% else %}
+              <span class="badge bg-secondary">Payment Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            <button class="btn btn-sm btn-success confirm-order-btn" data-order-id="{{ order.id }}">Confirm</button>
+            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#orderDetailsModal" data-order-id="{{ order.id }}">Details</button>
+            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal" data-order-id="{{ order.id }}">Cancel</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
     </div>
+  </div>
 </div>
 {% endif %}
 
@@ -256,149 +241,119 @@
         </div>
     </div>
     
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0" id="ordersTable">
-                <thead class="table-light">
-                    <tr>
-                        <th width="10%">Order #</th>
-                        <th width="20%">Customer</th>
-                        <th width="25%">Items</th>
-                        <th width="12%">Amount</th>
-                        <th width="10%">Payment</th>
-                        <th width="10%">Status</th>
-                        <th width="8%">Time</th>
-                        <th width="15%">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr class="order-row" data-order-id="{{ order.id }}" data-status="{{ order.status }}">
-                        <td>
-                            <div class="fw-bold text-primary">#{{ order.order_number }}</div>
-                            {% if order.special_instructions %}
-                            <small class="text-warning">
-                                <i class="bi bi-info-circle"></i> Has notes
-                            </small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                    {{ order.customer.first_name.0 }}{{ order.customer.last_name.0 }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold">{{ order.customer.first_name }} {{ order.customer.last_name }}</div>
-                                    <small class="text-muted">{{ order.customer.email }}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="order-items">
-                                {% for item in order.items.all|slice:":2" %}
-                                <div class="d-flex align-items-center mb-1">
-                                    {% if item.menu_item.image %}
-                                    <img src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}" 
-                                         class="rounded me-2" width="25" height="25">
-                                    {% endif %}
-                                    <span class="small">{{ item.quantity }}x {{ item.menu_item.name }}</span>
-                                </div>
-                                {% endfor %}
-                                {% if order.items.count > 2 %}
-                                <small class="text-muted">+{{ order.items.count|add:"-2" }} more items</small>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="fw-bold">{{ order.total_amount|floatformat:0 }} XAF</div>
-                            {% if order.discount_amount > 0 %}
-                            <small class="text-success">-{{ order.discount_amount }} XAF discount</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if order.payment_status == 'paid' %}
-                            <span class="badge bg-success">Paid</span>
-                            <small class="d-block text-muted">{{ order.payment_method }}</small>
-                            {% elif order.payment_status == 'pending' %}
-                            <span class="badge bg-warning">Pending</span>
-                            {% elif order.payment_status == 'failed' %}
-                            <span class="badge bg-danger">Failed</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if order.status == 'pending' %}
-                            <span class="badge bg-warning">Pending</span>
-                            {% elif order.status == 'confirmed' %}
-                            <span class="badge bg-info">Confirmed</span>
-                            {% elif order.status == 'preparing' %}
-                            <span class="badge bg-primary">Preparing</span>
-                            {% elif order.status == 'ready' %}
-                            <span class="badge bg-success">Ready</span>
-                            {% elif order.status == 'completed' %}
-                            <span class="badge bg-dark">Completed</span>
-                            {% elif order.status == 'cancelled' %}
-                            <span class="badge bg-danger">Cancelled</span>
-                            {% endif %}
-                            
-                            {% if order.estimated_ready_time %}
-                            <small class="d-block text-muted">
-                                ETA: {{ order.estimated_ready_time|date:"H:i" }}
-                            </small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="small">{{ order.created_at|date:"H:i" }}</div>
-                            <div class="small text-muted">{{ order.created_at|date:"M d" }}</div>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                {% if order.status == 'pending' %}
-                                <button class="btn btn-outline-success" onclick="confirmOrder('{{ order.id }}')" 
-                                        title="Confirm Order">
-                                    <i class="bi bi-check"></i>
-                                </button>
-                                {% elif order.status == 'confirmed' %}
-                                <button class="btn btn-outline-primary" onclick="startPreparation('{{ order.id }}')" 
-                                        title="Start Preparation">
-                                    <i class="bi bi-play"></i>
-                                </button>
-                                {% elif order.status == 'preparing' %}
-                                <button class="btn btn-outline-info" onclick="markReady('{{ order.id }}')" 
-                                        title="Mark Ready">
-                                    <i class="bi bi-check-circle"></i>
-                                </button>
-                                {% elif order.status == 'ready' %}
-                                <button class="btn btn-outline-dark" onclick="completeOrder('{{ order.id }}')" 
-                                        title="Complete Order">
-                                    <i class="bi bi-check2-all"></i>
-                                </button>
-                                {% endif %}
-                                
-                                <button class="btn btn-outline-secondary" onclick="viewOrderDetails('{{ order.id }}')" 
-                                        title="View Details">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                
-                                {% if order.status in 'pending,confirmed' %}
-                                <button class="btn btn-outline-danger" onclick="cancelOrder('{{ order.id }}')" 
-                                        title="Cancel Order">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-5">
-                            <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-                            <p class="text-muted">No orders found</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <!-- All Orders -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Amount</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td>
+              #{{ order.order_number }}
+              {% if order.special_instructions %}
+              <i class="fas fa-sticky-note" title="Has notes"></i>
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar avatar-sm bg-primary rounded-circle me-2">
+                  {{ order.employee.first_name.0 }}{{ order.employee.last_name.0 }}
+                </div>
+                <div>
+                  {{ order.employee.first_name }} {{ order.employee.last_name }}<br>
+                  {{ order.employee.email }}
+                </div>
+              </div>
+            </td>
+            <td>
+              {% for item in order.items.all|slice:":2" %}
+              <div>
+                {% if item.menu_item.image %}
+                <img src="{{ item.menu_item.image.url }}" alt="" width="20" class="me-1">
+                {% endif %}
+                {{ item.quantity }}x {{ item.menu_item.name }}
+              </div>
+              {% endfor %}
+              {% if order.items.count > 2 %}
+              +{{ order.items.count|add:"-2" }} more items
+              {% endif %}
+            </td>
+            <td>
+              {{ order.total_amount|floatformat:0 }} XAF
+              {% if order.discount_amount > 0 %}
+              -{{ order.discount_amount }} XAF discount
+              {% endif %}
+            </td>
+            <td>
+              {% if order.payment_status == 'paid' %}
+              <span class="badge bg-success">Paid {{ order.payment_method }}</span>
+              {% elif order.payment_status == 'pending' %}
+              <span class="badge bg-warning">Pending</span>
+              {% elif order.payment_status == 'failed' %}
+              <span class="badge bg-danger">Failed</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if order.status == 'pending' %}
+              <span class="badge bg-warning">Pending</span>
+              {% elif order.status == 'confirmed' %}
+              <span class="badge bg-info">Confirmed</span>
+              {% elif order.status == 'preparing' %}
+              <span class="badge bg-primary">Preparing</span>
+              {% elif order.status == 'ready' %}
+              <span class="badge bg-success">Ready</span>
+              {% elif order.status == 'completed' %}
+              <span class="badge bg-success">Completed</span>
+              {% elif order.status == 'cancelled' %}
+              <span class="badge bg-danger">Cancelled</span>
+              {% endif %}
+              {% if order.estimated_ready_time %}
+              <br>ETA: {{ order.estimated_ready_time|date:"H:i" }}
+              {% endif %}
+            </td>
+            <td>
+              {{ order.created_at|date:"H:i" }}<br>
+              {{ order.created_at|date:"M d" }}
+            </td>
+            <td>
+              {% if order.status == 'pending' %}
+              <button class="btn btn-sm btn-success confirm-order-btn" data-order-id="{{ order.id }}">Confirm</button>
+              {% elif order.status == 'confirmed' %}
+              <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#updateStatusModal" data-order-id="{{ order.id }}">Update</button>
+              {% elif order.status == 'preparing' %}
+              <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#updateStatusModal" data-order-id="{{ order.id }}">Update</button>
+              {% elif order.status == 'ready' %}
+              <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#updateStatusModal" data-order-id="{{ order.id }}">Update</button>
+              {% endif %}
+              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#orderDetailsModal" data-order-id="{{ order.id }}">Details</button>
+              {% if order.status in 'pending,confirmed' %}
+              <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal" data-order-id="{{ order.id }}">Cancel</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center">No orders found</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
         
         <!-- Pagination -->
         {% if orders.has_other_pages %}
@@ -455,115 +410,91 @@
         </div>
     </div>
 </div>
-
-<!-- Update Status Modal -->
-<div class="modal fade" id="updateStatusModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Update Order Status</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="updateStatusForm">
-                <div class="modal-body">
-                    <input type="hidden" id="statusOrderId" name="order_id">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label class="form-label">New Status</label>
-                        <select class="form-select" id="newStatus" name="status" required>
-                            <option value="">Select Status</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="preparing">Preparing</option>
-                            <option value="ready">Ready for Pickup</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3" id="readyTimeSection" style="display: none;">
-                        <label class="form-label">Estimated Ready Time</label>
-                        <input type="time" class="form-control" id="estimatedTime" name="estimated_time">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Notes (Optional)</label>
-                        <textarea class="form-control" rows="3" name="notes" 
-                                  placeholder="Add any notes about this status update..."></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="notifyCustomer" name="notify" checked>
-                            <label class="form-check-label" for="notifyCustomer">
-                                Notify customer about status change
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Status</button>
-                </div>
-            </form>
-        </div>
+<!-- Update Order Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="updateStatusModalLabel">Update Order Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="updateStatusForm" data-order-id="">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="statusSelect" class="form-label">New Status</label>
+            <select class="form-select" id="statusSelect" name="status" required>
+              <option value="">Select Status</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="preparing">Preparing</option>
+              <option value="ready">Ready for Pickup</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="estimatedReadyTime" class="form-label">Estimated Ready Time</label>
+            <input type="datetime-local" class="form-control" id="estimatedReadyTime" name="estimated_ready_time">
+          </div>
+          <div class="mb-3">
+            <label for="statusNotes" class="form-label">Notes (Optional)</label>
+            <textarea class="form-control" id="statusNotes" name="notes" rows="3"></textarea>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="notifyCustomer" name="notify_customer" checked>
+            <label class="form-check-label" for="notifyCustomer">Notify customer about status change</label>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update Status</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Cancel Order Modal -->
-<div class="modal fade" id="cancelOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger">Cancel Order</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="cancelOrderForm">
-                <div class="modal-body">
-                    <input type="hidden" id="cancelOrderId" name="order_id">
-                    {% csrf_token %}
-                    
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Are you sure you want to cancel this order? This action cannot be undone.
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Cancellation Reason</label>
-                        <select class="form-select" name="cancel_reason" required>
-                            <option value="">Select Reason</option>
-                            <option value="customer_request">Customer Request</option>
-                            <option value="payment_failed">Payment Failed</option>
-                            <option value="item_unavailable">Item Not Available</option>
-                            <option value="kitchen_issue">Kitchen Issue</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Additional Notes</label>
-                        <textarea class="form-control" rows="3" name="cancel_notes"
-                                  placeholder="Provide additional details about the cancellation..."></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="processRefund" name="process_refund">
-                            <label class="form-check-label" for="processRefund">
-                                Process refund (if payment was completed)
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
-                </div>
-            </form>
-        </div>
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="cancelOrderForm" data-order-id="">
+          {% csrf_token %}
+          <div class="mb-3">
+            <p>Are you sure you want to cancel this order? This action cannot be undone.</p>
+          </div>
+          <div class="mb-3">
+            <label for="cancellationReason" class="form-label">Cancellation Reason</label>
+            <select class="form-select" id="cancellationReason" name="reason" required>
+              <option value="">Select Reason</option>
+              <option value="customer_request">Customer Request</option>
+              <option value="payment_failed">Payment Failed</option>
+              <option value="item_not_available">Item Not Available</option>
+              <option value="kitchen_issue">Kitchen Issue</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="cancellationNotes" class="form-label">Additional Notes</label>
+            <textarea class="form-control" id="cancellationNotes" name="notes" rows="3"></textarea>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="processRefund" name="process_refund">
+            <label class="form-check-label" for="processRefund">Process refund (if payment was completed)</label>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -659,7 +590,6 @@
 
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'js/utils.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize filters
@@ -1152,116 +1082,179 @@ function updateActionButtons(row, status) {
     actionsCell.innerHTML = buttonsHtml;
 }
 
-function printOrder() {
-    const content = document.getElementById('orderDetailsContent').innerHTML;
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Order Details</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    .no-print { display: none; }
-                    @media print {
-                        body { margin: 0; }
-                    }
-                </style>
-            </head>
-            <body>
-                ${content}
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() { window.close(); }, 1000);
-                    }
-                </script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-}
-
-// Utility Functions
+// Utility Functions (showLoading, showToast remain unchanged from previous response)
 function showLoading(show) {
-    const body = document.body;
-    if (show) {
-        body.classList.add('loading');
-    } else {
-        body.classList.remove('loading');
-    }
+  const body = document.body;
+  if (show) {
+    body.classList.add('loading');
+  } else {
+    body.classList.remove('loading');
+  }
 }
 
 function showToast(message, type = 'info') {
-    // Create toast container if it doesn't exist
-    let toastContainer = document.querySelector('.toast-container');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-        toastContainer.style.zIndex = '9999';
-        document.body.appendChild(toastContainer);
-    }
-    
-    const toastId = 'toast-' + Date.now();
-    const toastHtml = `
-        <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'primary'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-    
-    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-    
-    const toastElement = document.getElementById(toastId);
+  let toastContainer = document.querySelector('.toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toastId = 'toast-' + Date.now();
+  const toastHtml = `
+    <div id="${toastId}" class="toast bg-${type} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto">Notification</strong>
+        <small class="text-muted">Just now</small>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        ${message}
+      </div>
+    </div>
+  `;
+  toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+  const toastElement = document.getElementById(toastId);
+  if (!toastElement) {
+    console.error('Failed to create toast element');
+    return;
+  }
+
+  try {
     const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
     toast.show();
-    
-    // Remove toast element after it's hidden
     toastElement.addEventListener('hidden.bs.toast', function() {
-        this.remove();
+      this.remove();
     });
+  } catch (error) {
+    console.error('Bootstrap Toast initialization failed:', error);
+    alert(message);
+  }
 }
 
 // Add loading overlay styles
 document.head.insertAdjacentHTML('beforeend', `
-    <style>
-        body.loading::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        
-        body.loading::before {
-            content: '';
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            z-index: 10000;
-            transform: translate(-50%, -50%);
-        }
-        
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-    </style>
+  <style>
+    .loading {
+      position: relative;
+    }
+    .loading::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+    }
+    .loading::after {
+      content: '';
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border: 4px solid #fff;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 9999;
+    }
+    @keyframes spin {
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+  </style>
 `);
+
+// AJAX handler for order actions
+function handleOrderAction(orderId, action, formData, modalId) {
+  showLoading(true);
+  fetch(`/orders/admin/${action}/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(formData),
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      showLoading(false);
+      if (data.success) {
+        showToast(data.message, 'success');
+        if (modalId) {
+          bootstrap.Modal.getInstance(document.getElementById(modalId)).hide();
+        }
+        setTimeout(() => location.reload(), 1000); // Refresh to reflect changes
+      } else {
+        showToast(data.message || 'An error occurred', 'danger');
+      }
+    })
+    .catch(error => {
+      showLoading(false);
+      showToast('Network error: ' + error.message, 'danger');
+    });
+}
+
+// Attach event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Confirm order buttons
+  document.querySelectorAll('.confirm-order-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const orderId = this.dataset.orderId;
+      handleOrderAction(orderId, 'confirm', {}, null);
+    });
+  });
+
+  // Update modal order ID dynamically
+  document.querySelectorAll('[data-bs-target="#updateStatusModal"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('updateStatusForm').dataset.orderId = this.dataset.orderId;
+    });
+  });
+
+  // Update status form submission
+  document.getElementById('updateStatusForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const orderId = this.dataset.orderId;
+    const formData = {
+      status: this.querySelector('#statusSelect').value,
+      estimated_ready_time: this.querySelector('#estimatedReadyTime').value,
+      notes: this.querySelector('#statusNotes').value,
+      notify_customer: this.querySelector('#notifyCustomer').checked,
+    };
+    handleOrderAction(orderId, 'update-status', formData, 'updateStatusModal');
+  });
+
+  // Cancel modal order ID dynamically
+  document.querySelectorAll('[data-bs-target="#cancelOrderModal"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('cancelOrderForm').dataset.orderId = this.dataset.orderId;
+    });
+  });
+
+  // Cancel order form submission
+  document.getElementById('cancelOrderForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const orderId = this.dataset.orderId;
+    const formData = {
+      reason: this.querySelector('#cancellationReason').value,
+      notes: this.querySelector('#cancellationNotes').value,
+      process_refund: this.querySelector('#processRefund').checked,
+    };
+    handleOrderAction(orderId, 'cancel', formData, 'cancelOrderModal');
+  });
+});
 </script>
 {% endblock %};

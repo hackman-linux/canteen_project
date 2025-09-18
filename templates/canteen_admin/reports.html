@@ -1,0 +1,1110 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Reports & Analytics - Canteen System{% endblock %}
+
+{% block user_name %}{{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block sidebar %}
+<a class="nav-link" href="{% url 'canteen_admin:dashboard' %}">
+    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:orders_management' %}">
+    <i class="bi bi-cart-check me-2"></i>Order Management
+</a>
+<a class="nav-link" href="{% url 'canteen_admin:menu_management' %}">
+    <i class="bi bi-card-list me-2"></i>Menu Management
+</a>
+<a class="nav-link active" href="{% url 'canteen_admin:reports' %}">
+    <i class="bi bi-graph-up me-2"></i>Reports & Analytics
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'canteen_admin:dashboard' %}">Admin</a></li>
+<li class="breadcrumb-item active">Reports & Analytics</li>
+{% endblock %}
+
+{% block page_title %}Reports & Analytics{% endblock %}
+
+{% block page_actions %}
+<div class="dropdown me-2">
+    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="bi bi-download me-2"></i>Export Reports
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#" onclick="exportReport('sales', 'pdf')">Sales Report (PDF)</a></li>
+        <li><a class="dropdown-item" href="#" onclick="exportReport('sales', 'excel')">Sales Report (Excel)</a></li>
+        <li><a class="dropdown-item" href="#" onclick="exportReport('inventory', 'pdf')">Inventory Report (PDF)</a></li>
+        <li><a class="dropdown-item" href="#" onclick="exportReport('customer', 'pdf')">Customer Report (PDF)</a></li>
+    </ul>
+</div>
+<button class="btn btn-primary" onclick="window.CanteenUtils.printDailySummary()">
+    <i class="bi bi-printer me-2"></i>Print Summary
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Report Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-funnel me-2"></i>Report Filters
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="reportFiltersForm" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Date Range</label>
+                        <select class="form-select" id="dateRange" onchange="updateDateInputs()">
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="this_week" selected>This Week</option>
+                            <option value="last_week">Last Week</option>
+                            <option value="this_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3" id="customDateInputs" style="display: none;">
+                        <label class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="fromDate" name="from_date">
+                    </div>
+                    <div class="col-md-3" id="customDateInputs2" style="display: none;">
+                        <label class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="toDate" name="to_date">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Report Type</label>
+                        <select class="form-select" id="reportType">
+                            <option value="overview" selected>Overview</option>
+                            <option value="sales">Sales Analysis</option>
+                            <option value="menu_performance">Menu Performance</option>
+                            <option value="customer_insights">Customer Insights</option>
+                            <option value="financial">Financial Summary</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-primary" onclick="generateReport()">
+                            <i class="bi bi-graph-up me-2"></i>Generate Report
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4" id="quickStatsRow">
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0" id="totalOrders">{{ total_orders|default:0 }}</h4>
+                        <p class="card-text">Total Orders</p>
+                        <small class="opacity-75">
+                            <i class="bi bi-arrow-up"></i>
+                            {{ orders_growth|default:0 }}% vs last period
+                        </small>
+                    </div>
+                    <i class="bi bi-cart-check fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0" id="totalRevenue">{{ total_revenue|floatformat:0|default:0 }} XAF</h4>
+                        <p class="card-text">Total Revenue</p>
+                        <small class="opacity-75">
+                            <i class="bi bi-arrow-up"></i>
+                            {{ revenue_growth|default:0 }}% vs last period
+                        </small>
+                    </div>
+                    <i class="bi bi-currency-dollar fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0" id="avgOrderValue">{{ avg_order_value|floatformat:0|default:0 }} XAF</h4>
+                        <p class="card-text">Avg Order Value</p>
+                        <small class="opacity-75">
+                            <i class="bi bi-arrow-up"></i>
+                            {{ aov_growth|default:0 }}% vs last period
+                        </small>
+                    </div>
+                    <i class="bi bi-graph-up fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0" id="activeCustomers">{{ active_customers|default:0 }}</h4>
+                        <p class="card-text">Active Customers</p>
+                        <small class="opacity-75">
+                            <i class="bi bi-arrow-up"></i>
+                            {{ customers_growth|default:0 }}% vs last period
+                        </small>
+                    </div>
+                    <i class="bi bi-people fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Analytics -->
+<div class="row mb-4">
+    <!-- Sales Trend Chart -->
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Sales Trend
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <input type="radio" class="btn-check" name="chartPeriod" id="chartDaily" value="daily" checked>
+                    <label class="btn btn-outline-primary" for="chartDaily">Daily</label>
+                    
+                    <input type="radio" class="btn-check" name="chartPeriod" id="chartWeekly" value="weekly">
+                    <label class="btn btn-outline-primary" for="chartWeekly">Weekly</label>
+                    
+                    <input type="radio" class="btn-check" name="chartPeriod" id="chartMonthly" value="monthly">
+                    <label class="btn btn-outline-primary" for="chartMonthly">Monthly</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="salesTrendChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Menu Items -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-star me-2"></i>Top Menu Items
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush" id="topMenuItems">
+                    {% for item in top_menu_items %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                        <div class="d-flex align-items-center">
+                            <div class="badge bg-primary rounded-pill me-3">{{ forloop.counter }}</div>
+                            <div>
+                                <h6 class="mb-0">{{ item.name }}</h6>
+                                <small class="text-muted">{{ item.category.name }}</small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-success">{{ item.total_sold }} sold</div>
+                            <small class="text-muted">{{ item.revenue|floatformat:0 }} XAF</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3 text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">No data available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Order Status Distribution -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart me-2"></i>Order Status Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="orderStatusChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue by Category -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart me-2"></i>Revenue by Category
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryRevenueChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Reports Tables -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="reportTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales-report" type="button" role="tab">
+                            <i class="bi bi-graph-up me-2"></i>Sales Report
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="menu-tab" data-bs-toggle="tab" data-bs-target="#menu-performance" type="button" role="tab">
+                            <i class="bi bi-card-list me-2"></i>Menu Performance
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customer-insights" type="button" role="tab">
+                            <i class="bi bi-people me-2"></i>Customer Insights
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial-summary" type="button" role="tab">
+                            <i class="bi bi-wallet2 me-2"></i>Financial Summary
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="reportTabsContent">
+                    <!-- Sales Report Tab -->
+                    <div class="tab-pane fade show active" id="sales-report" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="salesReportTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Orders</th>
+                                        <th>Revenue</th>
+                                        <th>Avg Order Value</th>
+                                        <th>Growth</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salesReportData">
+                                    {% for day in sales_data %}
+                                    <tr>
+                                        <td>{{ day.date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ day.order_count }}</span>
+                                        </td>
+                                        <td>
+                                            <strong class="text-success">{{ day.revenue|floatformat:0 }} XAF</strong>
+                                        </td>
+                                        <td>{{ day.avg_order_value|floatformat:0 }} XAF</td>
+                                        <td>
+                                            {% if day.growth > 0 %}
+                                                <span class="text-success">
+                                                    <i class="bi bi-arrow-up"></i>{{ day.growth|floatformat:1 }}%
+                                                </span>
+                                            {% elif day.growth < 0 %}
+                                                <span class="text-danger">
+                                                    <i class="bi bi-arrow-down"></i>{{ day.growth|floatformat:1 }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">0%</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewDayDetails('{{ day.date|date:"Y-m-d" }}')">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-1"></i>
+                                            <p class="mt-2">No sales data available for selected period</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Menu Performance Tab -->
+                    <div class="tab-pane fade" id="menu-performance" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="menuPerformanceTable">
+                                <thead>
+                                    <tr>
+                                        <th>Menu Item</th>
+                                        <th>Category</th>
+                                        <th>Orders</th>
+                                        <th>Revenue</th>
+                                        <th>Avg Rating</th>
+                                        <th>Stock Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in menu_performance %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.image %}
+                                                    <img src="{{ item.image.url }}" class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                                {% else %}
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-image text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <h6 class="mb-0">{{ item.name }}</h6>
+                                                    <small class="text-muted">{{ item.price|floatformat:0 }} XAF</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ item.category.name }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ item.total_orders }}</span>
+                                        </td>
+                                        <td>
+                                            <strong class="text-success">{{ item.total_revenue|floatformat:0 }} XAF</strong>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-1">{{ item.avg_rating|floatformat:1|default:"N/A" }}</span>
+                                                {% if item.avg_rating %}
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= item.avg_rating %}
+                                                            <i class="bi bi-star-fill text-warning"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-star text-muted"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if item.is_available %}
+                                                <span class="badge bg-success">Available</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Out of Stock</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="viewItemAnalytics({{ item.id }})">
+                                                    <i class="bi bi-graph-up"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="editMenuItem({{ item.id }})">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-1"></i>
+                                            <p class="mt-2">No menu performance data available</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Customer Insights Tab -->
+                    <div class="tab-pane fade" id="customer-insights" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Customer</th>
+                                        <th>Department</th>
+                                        <th>Total Orders</th>
+                                        <th>Total Spent</th>
+                                        <th>Avg Order Value</th>
+                                        <th>Last Order</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for customer in customer_insights %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <h6 class="mb-0">{{ customer.get_full_name|default:customer.username }}</h6>
+                                                <small class="text-muted">{{ customer.email }}</small>
+                                            </div>
+                                        </td>
+                                        <td>{{ customer.department|default:"N/A" }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ customer.total_orders }}</span>
+                                        </td>
+                                        <td>
+                                            <strong class="text-success">{{ customer.total_spent|floatformat:0 }} XAF</strong>
+                                        </td>
+                                        <td>{{ customer.avg_order_value|floatformat:0 }} XAF</td>
+                                        <td>
+                                            {% if customer.last_order_date %}
+                                                {{ customer.last_order_date|timesince }} ago
+                                            {% else %}
+                                                <span class="text-muted">Never</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if customer.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-1"></i>
+                                            <p class="mt-2">No customer data available</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Financial Summary Tab -->
+                    <div class="tab-pane fade" id="financial-summary" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Revenue Summary</h5>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Gross Revenue:</span>
+                                            <strong>{{ financial.gross_revenue|floatformat:0 }} XAF</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Service Fees:</span>
+                                            <strong>{{ financial.service_fees|floatformat:0 }} XAF</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Discounts:</span>
+                                            <strong class="text-danger">-{{ financial.discounts|floatformat:0 }} XAF</strong>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <span><strong>Net Revenue:</strong></span>
+                                            <strong class="text-success">{{ financial.net_revenue|floatformat:0 }} XAF</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Payment Methods</h5>
+                                        {% for method in financial.payment_methods %}
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>{{ method.name }}:</span>
+                                            <div>
+                                                <strong>{{ method.amount|floatformat:0 }} XAF</strong>
+                                                <small class="text-muted">({{ method.percentage }}%)</small>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="reportLoadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Generating report...</span>
+        </div>
+        <div class="loading-text">Generating report...</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 10px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: transparent;
+    border-bottom: 2px solid #007bff;
+    color: #007bff;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 10000;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+.btn-group .btn-check:checked + .btn {
+    background-color: #007bff;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .stats-card .card-body {
+        padding: 1rem 0.75rem;
+    }
+    
+    .stats-card .fs-1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .table-responsive {
+        border-radius: 0.375rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+// Chart configurations
+let salesTrendChart, orderStatusChart, categoryRevenueChart;
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    setupEventListeners();
+});
+
+function initializeCharts() {
+    // Sales Trend Chart
+    const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+    salesTrendChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: {{ sales_trend_labels|safe }},
+            datasets: [{
+                label: 'Revenue (XAF)',
+                data: {{ sales_trend_data|safe }},
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' XAF';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Order Status Chart
+    const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    orderStatusChart = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ order_status_labels|safe }},
+            datasets: [{
+                data: {{ order_status_data|safe }},
+                backgroundColor: [
+                    '#28a745', // Completed - Green
+                    '#ffc107', // Processing - Yellow
+                    '#007bff', // Pending - Blue
+                    '#dc3545', // Cancelled - Red
+                    '#6c757d'  // Other - Gray
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Category Revenue Chart
+    const categoryCtx = document.getElementById('categoryRevenueChart').getContext('2d');
+    categoryRevenueChart = new Chart(categoryCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ category_labels|safe }},
+            datasets: [{
+                label: 'Revenue (XAF)',
+                data: {{ category_revenue_data|safe }},
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#dc3545', 
+                    '#6c757d', '#17a2b8', '#fd7e14', '#e83e8c'
+                ],
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' XAF';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function setupEventListeners() {
+    // Chart period change
+    document.querySelectorAll('input[name="chartPeriod"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            updateSalesTrend(this.value);
+        });
+    });
+
+    // Date range change
+    document.getElementById('dateRange').addEventListener('change', function() {
+        updateDateInputs();
+        if (this.value !== 'custom') {
+            generateReport();
+        }
+    });
+}
+
+function updateDateInputs() {
+    const dateRange = document.getElementById('dateRange').value;
+    const customInputs = document.getElementById('customDateInputs');
+    const customInputs2 = document.getElementById('customDateInputs2');
+    
+    if (dateRange === 'custom') {
+        customInputs.style.display = 'block';
+        customInputs2.style.display = 'block';
+    } else {
+        customInputs.style.display = 'none';
+        customInputs2.style.display = 'none';
+    }
+}
+
+async function generateReport() {
+    const form = document.getElementById('reportFiltersForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    // Add selected values
+    params.append('date_range', document.getElementById('dateRange').value);
+    params.append('report_type', document.getElementById('reportType').value);
+    
+    showReportLoading(true);
+    
+    try {
+        const response = await window.CanteenUtils.makeAPICall(`/admin/reports/generate/?${params}`);
+        
+        if (response.success) {
+            updateReportData(response.data);
+            window.CanteenUtils.showToast('Report generated successfully', 'success');
+        } else {
+            throw new Error(response.message || 'Failed to generate report');
+        }
+    } catch (error) {
+        console.error('Report generation error:', error);
+        window.CanteenUtils.showToast('Failed to generate report', 'error');
+    } finally {
+        showReportLoading(false);
+    }
+}
+
+function updateReportData(data) {
+    // Update quick stats
+    document.getElementById('totalOrders').textContent = data.stats.total_orders || 0;
+    document.getElementById('totalRevenue').textContent = window.CanteenUtils.formatCurrency(data.stats.total_revenue || 0);
+    document.getElementById('avgOrderValue').textContent = window.CanteenUtils.formatCurrency(data.stats.avg_order_value || 0);
+    document.getElementById('activeCustomers').textContent = data.stats.active_customers || 0;
+    
+    // Update charts
+    if (data.charts) {
+        updateCharts(data.charts);
+    }
+    
+    // Update tables
+    if (data.tables) {
+        updateTables(data.tables);
+    }
+}
+
+function updateCharts(chartData) {
+    // Update sales trend chart
+    if (chartData.sales_trend) {
+        salesTrendChart.data.labels = chartData.sales_trend.labels;
+        salesTrendChart.data.datasets[0].data = chartData.sales_trend.data;
+        salesTrendChart.update();
+    }
+    
+    // Update order status chart
+    if (chartData.order_status) {
+        orderStatusChart.data.labels = chartData.order_status.labels;
+        orderStatusChart.data.datasets[0].data = chartData.order_status.data;
+        orderStatusChart.update();
+    }
+    
+    // Update category revenue chart
+    if (chartData.category_revenue) {
+        categoryRevenueChart.data.labels = chartData.category_revenue.labels;
+        categoryRevenueChart.data.datasets[0].data = chartData.category_revenue.data;
+        categoryRevenueChart.update();
+    }
+}
+
+function updateTables(tableData) {
+    // Update sales report table
+    if (tableData.sales_report) {
+        const tbody = document.getElementById('salesReportData');
+        tbody.innerHTML = '';
+        
+        tableData.sales_report.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatDate(row.date)}</td>
+                <td><span class="badge bg-primary">${row.order_count}</span></td>
+                <td><strong class="text-success">${window.CanteenUtils.formatCurrency(row.revenue)}</strong></td>
+                <td>${window.CanteenUtils.formatCurrency(row.avg_order_value)}</td>
+                <td>
+                    ${row.growth > 0 ? 
+                        `<span class="text-success"><i class="bi bi-arrow-up"></i>${row.growth.toFixed(1)}%</span>` :
+                        row.growth < 0 ?
+                        `<span class="text-danger"><i class="bi bi-arrow-down"></i>${Math.abs(row.growth).toFixed(1)}%</span>` :
+                        `<span class="text-muted">0%</span>`
+                    }
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewDayDetails('${row.date}')">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+async function updateSalesTrend(period) {
+    showReportLoading(true);
+    
+    try {
+        const response = await window.CanteenUtils.makeAPICall(`/admin/reports/sales-trend/?period=${period}`);
+        
+        if (response.success) {
+            salesTrendChart.data.labels = response.data.labels;
+            salesTrendChart.data.datasets[0].data = response.data.values;
+            salesTrendChart.update();
+        }
+    } catch (error) {
+        console.error('Failed to update sales trend:', error);
+        window.CanteenUtils.showToast('Failed to update chart', 'error');
+    } finally {
+        showReportLoading(false);
+    }
+}
+
+function showReportLoading(show) {
+    const overlay = document.getElementById('reportLoadingOverlay');
+    overlay.style.display = show ? 'flex' : 'none';
+}
+
+function resetFilters() {
+    document.getElementById('reportFiltersForm').reset();
+    document.getElementById('dateRange').value = 'this_week';
+    document.getElementById('reportType').value = 'overview';
+    updateDateInputs();
+    generateReport();
+}
+
+// Export functions
+async function exportReport(type, format) {
+    const form = document.getElementById('reportFiltersForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    params.append('export_type', type);
+    params.append('export_format', format);
+    params.append('date_range', document.getElementById('dateRange').value);
+    
+    showReportLoading(true);
+    
+    try {
+        const response = await fetch(`/admin/reports/export/?${params}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': window.CanteenUtils.getCookie('csrftoken')
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `${type}_report_${new Date().toISOString().split('T')[0]}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            window.CanteenUtils.showToast('Report exported successfully', 'success');
+        } else {
+            throw new Error('Export failed');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        window.CanteenUtils.showToast('Failed to export report', 'error');
+    } finally {
+        showReportLoading(false);
+    }
+}
+
+// Detail view functions
+function viewDayDetails(date) {
+    window.location.href = `/admin/reports/daily-details/?date=${date}`;
+}
+
+function viewItemAnalytics(itemId) {
+    const modal = new bootstrap.Modal(document.getElementById('itemAnalyticsModal') || createItemAnalyticsModal());
+    loadItemAnalytics(itemId);
+    modal.show();
+}
+
+function editMenuItem(itemId) {
+    window.location.href = `/admin/menu/items/${itemId}/edit/`;
+}
+
+function createItemAnalyticsModal() {
+    const modalHtml = `
+        <div class="modal fade" id="itemAnalyticsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Item Analytics</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="itemAnalyticsContent">
+                        <div class="text-center py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    return document.getElementById('itemAnalyticsModal');
+}
+
+async function loadItemAnalytics(itemId) {
+    const content = document.getElementById('itemAnalyticsContent');
+    
+    try {
+        const response = await window.CanteenUtils.makeAPICall(`/admin/reports/item-analytics/${itemId}/`);
+        
+        if (response.success) {
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Performance Metrics</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Total Orders:</strong> ${response.data.total_orders}</li>
+                            <li><strong>Total Revenue:</strong> ${window.CanteenUtils.formatCurrency(response.data.total_revenue)}</li>
+                            <li><strong>Average Rating:</strong> ${response.data.avg_rating || 'N/A'}</li>
+                            <li><strong>Popularity Rank:</strong> #${response.data.popularity_rank}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Trends</h6>
+                        <canvas id="itemTrendChart" height="200"></canvas>
+                    </div>
+                </div>
+            `;
+            
+            // Create trend chart
+            const ctx = document.getElementById('itemTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: response.data.trend_labels,
+                    datasets: [{
+                        label: 'Orders',
+                        data: response.data.trend_data,
+                        borderColor: '#007bff',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+    } catch (error) {
+        content.innerHTML = '<div class="alert alert-danger">Failed to load analytics data</div>';
+    }
+}
+
+// Utility functions
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+// Initialize report generation on page load
+window.addEventListener('load', function() {
+    generateReport();
+});
+
+window.CanteenUtils = {
+    async makeAPICall(url, method='GET', body=null) {
+        const options = {
+            method,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        };
+        if (body) options.body = JSON.stringify(body);
+        const res = await fetch(url, options);
+        return await res.json();
+    },
+    getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    },
+    showToast(msg, type='info') {
+        alert(`[${type.toUpperCase()}] ${msg}`); // Replace with Bootstrap toast if you want
+    },
+    formatCurrency(val) {
+        return `${val.toLocaleString()} XAF`;
+    },
+    printDailySummary() {
+        window.print();
+    }
+};
+
+</script>
+{% endblock %}

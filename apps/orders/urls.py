@@ -18,6 +18,9 @@ urlpatterns = [
     path('cart/count/', views.get_cart_count, name='get_cart_count'),
     path('cart/validate/', views.validate_cart, name='validate_cart'),
     path('cart/clear/', views.clear_cart, name='clear_cart'),
+    path('admin/confirm/<uuid:order_id>/', views.confirm_order, name='confirm_order'),
+    path('admin/update-status/<uuid:order_id>/', views.update_order_status, name='update_order_status'),
+    path('admin/cancel/<uuid:order_id>/', views.cancel_order, name='cancel_order'),
     
     # Payment Flow
     path('<uuid:order_id>/payment/', views.proceed_to_payment, name='proceed_to_payment'),  # Step 5: Payment page
