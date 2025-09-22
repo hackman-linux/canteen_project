@@ -1256,5 +1256,831 @@ document.addEventListener('DOMContentLoaded', function() {
     handleOrderAction(orderId, 'cancel', formData, 'cancelOrderModal');
   });
 });
+
+// Complete Enhanced JavaScript for Orders Management Template
+// This handles order confirmation, cancellation, details, and filtering with email notifications
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all functionality
+    initializeOrderActions();
+    initializeFilters();
+    initializeModals();
+    initializeToast();
+    
+    // Auto-refresh for pending orders every 30 seconds
+    setInterval(refreshOrderCounts, 30000);
+    
+    // Initialize export and print functions
+    initializeExportPrint();
+});
+
+// Global variables for managing state
+let loadingOverlay = null;
+let toastContainer = null;
+
+function initializeToast() {
+    // Create toast container if it doesn't exist
+    if (!document.getElementById('toast-container')) {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+    }
+    toastContainer = document.getElementById('toast-container');
+}
+
+function showToast(message, type = 'info') {
+    if (!toastContainer) initializeToast();
+    
+    const toastId = 'toast-' + Date.now();
+    const bgClass = {
+        'success': 'bg-success',
+        'error': 'bg-danger',
+        'warning': 'bg-warning',
+        'info': 'bg-info'
+    }[type] || 'bg-info';
+    
+    const toastHTML = `
+        <div class="toast ${bgClass} text-white" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${bgClass} text-white border-0">
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+    toast.show();
+    
+    // Auto-remove toast after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+function showLoading(show = true) {
+    if (show) {
+        if (!loadingOverlay) {
+            loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loading-overlay';
+            loadingOverlay.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 9998;
+                display: none;
+            `;
+            document.body.appendChild(loadingOverlay);
+        }
+        loadingOverlay.style.display = 'block';
+    } else {
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+}
+
+function initializeOrderActions() {
+    // Confirm Order Action with Email
+    document.querySelectorAll('.confirm-order-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const orderId = this.dataset.orderId;
+            const orderNumber = this.closest('tr').querySelector('td:first-child strong').textContent;
+            
+            if (confirm(`Confirm order ${orderNumber}? This will send a payment link to the customer's email.`)) {
+                confirmOrderWithEmail(orderId);
+            }
+        });
+    });
+
+    // Cancel Order Action with Email
+    document.querySelectorAll('[data-bs-target="#cancelOrderModal"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orderId = this.dataset.orderId;
+            const orderRow = this.closest('tr');
+            const orderNumber = orderRow.querySelector('td:first-child strong').textContent;
+            const customerEmail = extractEmailFromRow(orderRow);
+            
+            document.getElementById('cancelOrderForm').dataset.orderId = orderId;
+            document.querySelector('#cancelOrderModal .modal-title').textContent = `Cancel Order ${orderNumber}`;
+            document.getElementById('customerEmailDisplay').textContent = customerEmail || 'Email not available';
+        });
+    });
+
+    // Update Status Action
+    document.querySelectorAll('[data-bs-target="#updateStatusModal"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orderId = this.dataset.orderId;
+            const orderRow = this.closest('tr');
+            const orderNumber = orderRow.querySelector('td:first-child strong').textContent;
+            
+            document.getElementById('updateStatusForm').dataset.orderId = orderId;
+            document.querySelector('#updateStatusModal .modal-title').textContent = `Update Status - ${orderNumber}`;
+            
+            // Pre-populate current status
+            const currentStatusElement = orderRow.querySelector('td:nth-child(6) .badge');
+            if (currentStatusElement) {
+                const currentStatus = currentStatusElement.textContent.toLowerCase().trim();
+                const statusSelect = document.getElementById('statusSelect');
+                if (statusSelect) {
+                    statusSelect.value = mapDisplayStatusToValue(currentStatus);
+                }
+            }
+        });
+    });
+
+    // Order Details Action
+    document.querySelectorAll('[data-bs-target="#orderDetailsModal"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orderId = this.dataset.orderId;
+            loadOrderDetails(orderId);
+        });
+    });
+}
+
+function confirmOrderWithEmail(orderId) {
+    showLoading(true);
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    formData.append('action', 'confirm');
+    formData.append('send_email', 'true');
+    
+    fetch(`/orders/admin/confirm/${orderId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            showToast(data.message || 'Order confirmed and payment link sent successfully!', 'success');
+            
+            // Update the order row in the table
+            updateOrderRowStatus(orderId, 'confirmed');
+            
+            // Refresh counts
+            refreshOrderCounts();
+            
+            // Log activity
+            console.log(`Order ${orderId} confirmed with email notification sent`);
+        } else {
+            showToast(data.message || 'Error confirming order', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Error confirming order:', error);
+        showToast('Network error occurred while confirming order', 'error');
+    });
+}
+
+function handleOrderCancellation() {
+    const form = document.getElementById('cancelOrderForm');
+    const orderId = form.dataset.orderId;
+    const reason = form.querySelector('#cancellationReason').value;
+    const notes = form.querySelector('#cancellationNotes').value;
+    const processRefund = form.querySelector('#processRefund')?.checked || false;
+    const sendEmail = form.querySelector('#sendCancellationEmail')?.checked !== false; // Default true
+    
+    if (!reason) {
+        showToast('Please select a cancellation reason', 'warning');
+        return;
+    }
+    
+    showLoading(true);
+    
+    const requestData = {
+        action: 'cancel',
+        reason: reason,
+        notes: notes,
+        process_refund: processRefund,
+        send_email: sendEmail
+    };
+    
+    fetch(`/orders/admin/cancel/${orderId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            showToast(data.message || 'Order cancelled and notification sent successfully!', 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal'));
+            modal.hide();
+            
+            // Update order row
+            updateOrderRowStatus(orderId, 'cancelled');
+            
+            // Refresh counts
+            refreshOrderCounts();
+            
+            // Reset form
+            form.reset();
+            
+            console.log(`Order ${orderId} cancelled with email notification sent`);
+        } else {
+            showToast(data.message || 'Error cancelling order', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Error cancelling order:', error);
+        showToast('Network error occurred while cancelling order', 'error');
+    });
+}
+
+function handleStatusUpdate() {
+    const form = document.getElementById('updateStatusForm');
+    const orderId = form.dataset.orderId;
+    const status = form.querySelector('#statusSelect').value;
+    const estimatedTime = form.querySelector('#estimatedReadyTime')?.value;
+    const notes = form.querySelector('#statusNotes')?.value;
+    const notifyCustomer = form.querySelector('#notifyCustomer')?.checked !== false; // Default true
+    
+    if (!status) {
+        showToast('Please select a status', 'warning');
+        return;
+    }
+    
+    showLoading(true);
+    
+    const requestData = {
+        action: 'update_status',
+        status: status,
+        estimated_ready_time: estimatedTime,
+        notes: notes,
+        notify_customer: notifyCustomer
+    };
+    
+    fetch(`/orders/admin/update-status/${orderId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        showLoading(false);
+        if (data.success) {
+            showToast(data.message || 'Order status updated successfully!', 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('updateStatusModal'));
+            modal.hide();
+            
+            // Update order row
+            updateOrderRowStatus(orderId, status, data.order_data);
+            
+            // Refresh counts
+            refreshOrderCounts();
+            
+            // Reset form
+            form.reset();
+            
+            console.log(`Order ${orderId} status updated to ${status}`);
+        } else {
+            showToast(data.message || 'Error updating order status', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Error updating order status:', error);
+        showToast('Network error occurred while updating order status', 'error');
+    });
+}
+
+function loadOrderDetails(orderId) {
+    showLoading(true);
+    
+    fetch(`/orders/${orderId}/detail/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        showLoading(false);
+        if (data.success || data.order_number) {
+            document.getElementById('orderDetailsContent').innerHTML = buildOrderDetailsHTML(data);
+        } else {
+            showToast('Error loading order details', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Error loading order details:', error);
+        
+        // Fallback: try to extract details from the table row
+        const orderRow = document.querySelector(`tr[data-order-id="${orderId}"]`);
+        if (orderRow) {
+            const fallbackDetails = extractOrderDetailsFromRow(orderRow);
+            document.getElementById('orderDetailsContent').innerHTML = fallbackDetails;
+        } else {
+            showToast('Error loading order details', 'error');
+        }
+    });
+}
+
+function buildOrderDetailsHTML(orderData) {
+    const items = orderData.items || [];
+    return `
+        <div class="order-details">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Order Information</h6>
+                    <p><strong>Order #:</strong> ${orderData.order_number}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-info">${orderData.status}</span></p>
+                    <p><strong>Total:</strong> ${orderData.total || orderData.total_amount} XAF</p>
+                    <p><strong>Placed:</strong> ${orderData.created_at || 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Customer Information</h6>
+                    <p><strong>Name:</strong> ${orderData.customer_name || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${orderData.customer_email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${orderData.customer_phone || 'N/A'}</p>
+                    <p><strong>Office:</strong> ${orderData.office_number || 'N/A'}</p>
+                </div>
+            </div>
+            <div class="mb-3">
+                <h6>Order Items</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(item => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${item.unit_price} XAF</td>
+                                    <td>${item.total} XAF</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            ${orderData.special_instructions ? `
+                <div class="mb-3">
+                    <h6>Special Instructions</h6>
+                    <p class="text-muted">${orderData.special_instructions}</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function extractOrderDetailsFromRow(orderRow) {
+    const orderNumber = orderRow.querySelector('td:first-child strong').textContent;
+    const customerInfo = orderRow.querySelector('td:nth-child(2)').textContent.trim();
+    const itemsInfo = orderRow.querySelector('td:nth-child(3)').innerHTML;
+    const amount = orderRow.querySelector('td:nth-child(4)').textContent.trim();
+    const status = orderRow.querySelector('td:nth-child(6) .badge').textContent.trim();
+    const dateInfo = orderRow.querySelector('td:nth-child(7)').textContent.trim();
+    
+    return `
+        <div class="order-details-fallback">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Order Information</h6>
+                    <p><strong>Order #:</strong> ${orderNumber}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-info">${status}</span></p>
+                    <p><strong>Total:</strong> ${amount}</p>
+                    <p><strong>Date:</strong> ${dateInfo}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Customer Information</h6>
+                    <p>${customerInfo}</p>
+                </div>
+            </div>
+            <div class="mb-3">
+                <h6>Order Items</h6>
+                <div>${itemsInfo}</div>
+            </div>
+        </div>
+    `;
+}
+
+function initializeFilters() {
+    // Status Filter
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            applyFilters();
+        });
+    }
+    
+    // Payment Filter
+    const paymentFilter = document.getElementById('paymentFilter');
+    if (paymentFilter) {
+        paymentFilter.addEventListener('change', function() {
+            applyFilters();
+        });
+    }
+    
+    // Time Filter
+    const timeFilter = document.getElementById('timeFilter');
+    if (timeFilter) {
+        timeFilter.addEventListener('change', function() {
+            applyFilters();
+        });
+    }
+    
+    // Customer Search
+    const customerSearch = document.getElementById('customerSearch');
+    if (customerSearch) {
+        let searchTimeout;
+        customerSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyFilters();
+            }, 500);
+        });
+    }
+    
+    // Order ID Search
+    const orderIdSearch = document.getElementById('orderIdSearch');
+    if (orderIdSearch) {
+        let searchTimeout;
+        orderIdSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyFilters();
+            }, 500);
+        });
+    }
+    
+    // Global Search
+    const globalSearch = document.getElementById('globalSearch');
+    if (globalSearch) {
+        let searchTimeout;
+        globalSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyGlobalSearch(this.value);
+            }, 300);
+        });
+    }
+    
+    // Sort Orders
+    const sortOrders = document.getElementById('sortOrders');
+    if (sortOrders) {
+        sortOrders.addEventListener('change', function() {
+            applySorting(this.value);
+        });
+    }
+    
+    // Date Range Filters
+    const fromDate = document.getElementById('fromDate');
+    const toDate = document.getElementById('toDate');
+    if (fromDate) {
+        fromDate.addEventListener('change', applyFilters);
+    }
+    if (toDate) {
+        toDate.addEventListener('change', applyFilters);
+    }
+    
+    // Clear Filters Button
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', clearFilters);
+    }
+}
+
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter')?.value || '';
+    const paymentFilter = document.getElementById('paymentFilter')?.value || '';
+    const timeFilter = document.getElementById('timeFilter')?.value || '';
+    const customerSearch = document.getElementById('customerSearch')?.value.toLowerCase() || '';
+    const orderIdSearch = document.getElementById('orderIdSearch')?.value.toLowerCase() || '';
+    const fromDate = document.getElementById('fromDate')?.value || '';
+    const toDate = document.getElementById('toDate')?.value || '';
+    
+    const tableRows = document.querySelectorAll('tbody tr');
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+        if (row.querySelector('td[colspan]')) return; // Skip "no orders found" row
+        
+        let showRow = true;
+        
+        // Status filter
+        if (statusFilter && showRow) {
+            const statusBadge = row.querySelector('td:nth-child(6) .badge');
+            if (!statusBadge || !statusBadge.textContent.toLowerCase().includes(statusFilter.toLowerCase())) {
+                showRow = false;
+            }
+        }
+        
+        // Payment filter
+        if (paymentFilter && showRow) {
+            const paymentBadge = row.querySelector('td:nth-child(5) .badge');
+            if (paymentFilter === 'paid' && (!paymentBadge || !paymentBadge.textContent.toLowerCase().includes('paid'))) {
+                showRow = false;
+            } else if (paymentFilter === 'pending' && (!paymentBadge || !paymentBadge.textContent.toLowerCase().includes('pending'))) {
+                showRow = false;
+            } else if (paymentFilter === 'failed' && (!paymentBadge || !paymentBadge.textContent.toLowerCase().includes('failed'))) {
+                showRow = false;
+            }
+        }
+        
+        // Customer search
+        if (customerSearch && showRow) {
+            const customerCell = row.querySelector('td:nth-child(2)');
+            if (!customerCell || !customerCell.textContent.toLowerCase().includes(customerSearch)) {
+                showRow = false;
+            }
+        }
+        
+        // Order ID search
+        if (orderIdSearch && showRow) {
+            const orderIdCell = row.querySelector('td:first-child');
+            if (!orderIdCell || !orderIdCell.textContent.toLowerCase().includes(orderIdSearch)) {
+                showRow = false;
+            }
+        }
+        
+        // Date range filter
+        if ((fromDate || toDate) && showRow) {
+            const dateCell = row.querySelector('td:nth-child(7)');
+            if (dateCell) {
+                const orderDate = new Date(dateCell.textContent.trim());
+                if (fromDate && orderDate < new Date(fromDate)) {
+                    showRow = false;
+                }
+                if (toDate && orderDate > new Date(toDate + 'T23:59:59')) {
+                    showRow = false;
+                }
+            }
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+        if (showRow) visibleCount++;
+    });
+    
+    // Update visible count indicator
+    updateFilterResultsCount(visibleCount);
+}
+
+function applyGlobalSearch(searchTerm) {
+    const tableRows = document.querySelectorAll('tbody tr');
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+        if (row.querySelector('td[colspan]')) return; // Skip "no orders found" row
+        
+        const rowText = row.textContent.toLowerCase();
+        const showRow = !searchTerm || rowText.includes(searchTerm.toLowerCase());
+        
+        row.style.display = showRow ? '' : 'none';
+        if (showRow) visibleCount++;
+    });
+    
+    updateFilterResultsCount(visibleCount);
+}
+
+function applySorting(sortBy) {
+    const tbody = document.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('td[colspan]'));
+    
+    rows.sort((a, b) => {
+        switch (sortBy) {
+            case 'newest':
+            case 'Newest First':
+                return compareDates(
+                    extractDateFromRow(b),
+                    extractDateFromRow(a)
+                );
+            case 'oldest':
+            case 'Oldest First':
+                return compareDates(
+                    extractDateFromRow(a),
+                    extractDateFromRow(b)
+                );
+            case 'amount_high':
+            case 'Amount (High to Low)':
+                return extractAmount(b) - extractAmount(a);
+            case 'amount_low':
+            case 'Amount (Low to High)':
+                return extractAmount(a) - extractAmount(b);
+            case 'status':
+            case 'By Status':
+                return extractStatus(a).localeCompare(extractStatus(b));
+            default:
+                return 0;
+        }
+    });
+    
+    // Reorder rows in DOM
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Helper functions for sorting
+function extractDateFromRow(row) {
+    const dateCell = row.querySelector('td:nth-child(7)');
+    return dateCell ? new Date(dateCell.textContent.trim()) : new Date(0);
+}
+
+function extractAmount(row) {
+    const amountCell = row.querySelector('td:nth-child(4)');
+    const amountText = amountCell ? amountCell.textContent.replace(/[^\d.]/g, '') : '0';
+    return parseFloat(amountText) || 0;
+}
+
+function extractStatus(row) {
+    const statusBadge = row.querySelector('td:nth-child(6) .badge');
+    return statusBadge ? statusBadge.textContent.trim() : '';
+}
+
+function extractEmailFromRow(row) {
+    const customerCell = row.querySelector('td:nth-child(2)');
+    if (customerCell) {
+        const emailMatch = customerCell.textContent.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+        return emailMatch ? emailMatch[0] : '';
+    }
+    return '';
+}
+
+function compareDates(date1, date2) {
+    return date1.getTime() - date2.getTime();
+}
+
+function updateFilterResultsCount(count) {
+    let indicator = document.getElementById('filter-results-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'filter-results-indicator';
+        indicator.className = 'text-muted small mb-2';
+        const tableContainer = document.querySelector('.table-responsive');
+        if (tableContainer) {
+            tableContainer.parentNode.insertBefore(indicator, tableContainer);
+        }
+    }
+    indicator.textContent = `Showing ${count} order${count !== 1 ? 's' : ''}`;
+}
+
+function clearFilters() {
+    // Clear all filter inputs
+    const filterInputs = ['statusFilter', 'paymentFilter', 'timeFilter', 'customerSearch', 'orderIdSearch', 'globalSearch', 'fromDate', 'toDate'];
+    filterInputs.forEach(filterId => {
+        const element = document.getElementById(filterId);
+        if (element) {
+            element.value = '';
+        }
+    });
+    
+    // Show all rows
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Remove results indicator
+    const indicator = document.getElementById('filter-results-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+    
+    showToast('All filters cleared', 'info');
+}
+
+function updateOrderRowStatus(orderId, newStatus, orderData = null) {
+    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+    if (!row) return;
+    
+    // Update status badge
+    const statusCell = row.querySelector('td:nth-child(6)');
+    const statusBadge = statusCell.querySelector('.badge');
+    
+    if (statusBadge) {
+        // Remove existing status classes
+        statusBadge.classList.remove('bg-warning', 'bg-info', 'bg-primary', 'bg-success', 'bg-danger', 'bg-secondary');
+        
+        // Add new status class and text
+        const statusConfig = {
+            'pending': { class: 'bg-warning', text: 'Pending' },
+            'confirmed': { class: 'bg-info', text: 'Confirmed' },
+            'preparing': { class: 'bg-primary', text: 'Preparing' },
+            'ready': { class: 'bg-success', text: 'Ready' },
+            'completed': { class: 'bg-success', text: 'Completed' },
+            'cancelled': { class: 'bg-danger', text: 'Cancelled' }
+        };
+        
+        const config = statusConfig[newStatus.toLowerCase()] || statusConfig['pending'];
+        statusBadge.classList.add(config.class);
+        statusBadge.textContent = config.text;
+        
+        // Update ETA if provided
+        if (orderData && orderData.estimated_ready_time) {
+            let etaElement = statusCell.querySelector('.eta-time');
+            if (!etaElement) {
+                etaElement = document.createElement('br');
+                statusCell.appendChild(etaElement);
+                etaElement = document.createElement('small');
+                etaElement.className = 'eta-time text-muted d-block';
+                statusCell.appendChild(etaElement);
+            }
+            etaElement.textContent = `ETA: ${orderData.estimated_ready_time}`;
+        }
+    }
+    
+    // Update action buttons based on new status
+    updateActionButtons(row, newStatus);
+}
+
+function updateActionButtons(row, status) {
+    const actionCell = row.querySelector('td:last-child');
+    if (!actionCell) return;
+    
+    const orderId = row.dataset.orderId;
+    let buttonsHTML = '';
+    
+    // Build buttons based on status
+    switch (status.toLowerCase()) {
+        case 'pending':
+            buttonsHTML = `
+                <button class="btn btn-sm btn-success confirm-order-btn me-1" data-order-id="${orderId}" title="Confirm Order">
+                    <i class="bi bi-check"></i>
+                </button>
+                <button class="btn btn-sm btn-info me-1" data-bs-toggle="modal" data-bs-target="#orderDetailsModal" data-order-id="${orderId}" title="View Details">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal" data-order-id="${orderId}" title="Cancel Order">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            break;
+            
+        case 'confirmed':
+        case 'preparing':
+        case 'ready':
+            buttonsHTML = `
+                <button class="btn btn-sm btn-primary me-1" data-bs-toggle="modal" data-bs-target="#updateStatusModal" data-order-id="${orderId}" title="Update Status">
+                    <i class="bi bi-arrow-up-circle"></i>
+                     <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#updateStatusModal" data-order-id="${orderId}" title="Update Status">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+    }}
 </script>
 {% endblock %};

@@ -1,0 +1,87 @@
+{% extends 'base/base.html' %}
+
+{% block title %}My Notifications{% endblock %}
+
+{% block content %}
+  <h2>My Notifications</h2>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Message</th>
+          <th>Type</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user_notification in page_obj %}
+        <tr>
+          <td>{{ user_notification.notification.title }}</td>
+          <td>{{ user_notification.notification.message }}</td>
+          <td>{{ user_notification.notification.get_notification_type_display }}</td>
+          <td>{{ user_notification.notification.created_at|date:"M d, Y H:i" }}</td>
+          <td>
+            {% if not user_notification.is_read %}
+            <button class="btn btn-sm btn-primary mark-read-btn" data-id="{{ user_notification.id }}">Mark as Read</button>
+            {% endif %}
+            <button class="btn btn-sm btn-danger delete-btn" data-id="{{ user_notification.id }}">Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No notifications</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'partials/pagination.html' with page_obj=page_obj %}
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.mark-read-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        fetch(`/notifications/mark_read/${id}/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showToast(data.message, 'success');
+            location.reload();
+          } else {
+            showToast(data.error, 'danger');
+          }
+        })
+        .catch(() => showToast('Network error', 'danger'));
+      });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        fetch(`/notifications/delete/${id}/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showToast(data.message, 'success');
+            location.reload();
+          } else {
+            showToast(data.error, 'danger');
+          }
+        })
+        .catch(() => showToast('Network error', 'danger'));
+      });
+    });
+  });
+  </script>
+{% endblock %}

@@ -17,4 +17,7 @@ urlpatterns = [
     # Webhooks
     path('webhook/mtn/', views.mtn_webhook, name='mtn_webhook'),
     path('webhook/orange/', views.orange_webhook, name='orange_webhook'),
+    # Update payments/urls.py to include webhook and status check
+    path('webhook/campay/', views.campay_webhook, name='campay_webhook'),
+    path('status/<str:transaction_id>/', views.check_payment_status, name='check_status'),
 ]

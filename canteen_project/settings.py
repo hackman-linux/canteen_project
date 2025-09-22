@@ -295,6 +295,13 @@ ORANGE_MONEY_CONFIG = {
     "MERCHANT_KEY": config("ORANGE_MERCHANT_KEY", default=""),
 }
 
+# Update settings.py to include CamPay config
+CAMPAY_CONFIG = {
+    "APP_USERNAME": config("CAMPAY_APP_USERNAME", default="cPe8puQuUfDJYZ7_SzAh4caSozD1tpd5Uf7H0BTqK1RovFJ_OtRKrIsfH-seXqdUIeVa6_5cW5mbyPTdHGw_BQ"),
+    "APP_PASSWORD": config("CAMPAY_APP_PASSWORD", default="buTjmbRMb00xDK29FmHlax-10OdWJjRzT53max3P7Ih-aMoGXOjEFZqu2sv21hKuOJ3eh2HEOqEDfRwpSsZZVg"),
+    "ENVIRONMENT": config("CAMPAY_ENVIRONMENT", default="DEV")  # or "PROD"
+}
+
 # --------------------
 # Cache & Sessions
 # --------------------

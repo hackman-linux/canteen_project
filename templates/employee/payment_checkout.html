@@ -1,10 +1,47 @@
+<!-- Update payment_checkout.html to include phone input and AJAX -->
 {% extends "base/base.html" %}
 {% block content %}
 <h2>Payment for Order {{ order.id }}</h2>
-<p>Total: <strong>{{ order.total_amount }} XAF</strong></p>
+<p>Total: {{ order.total_amount }} XAF</p>
 
-<form method="POST" action="#">
+<form id="paymentForm">
   {% csrf_token %}
-  <button type="submit" class="btn btn-success">Proceed with Payment</button>
+  <div class="mb-3">
+    <label for="phone" class="form-label">Phone Number (for MoMo or Orange)</label>
+    <input type="tel" class="form-control" id="phone" name="phone" required placeholder="+237xxxxxxxxx">
+  </div>
+  <button type="submit" class="btn btn-primary">Proceed with Payment</button>
 </form>
+
+<script>
+document.getElementById('paymentForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  formData.append('order_id', '{{ order.id }}');
+  formData.append('amount', '{{ order.total_amount }}');
+  fetch('{% url "payments:process_payment" %}', {
+    method: 'POST',
+    body: JSON.stringify(Object.fromEntries(formData))
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Payment initiated. Reference: ' + data.reference, 'success');
+      // Poll status
+      setInterval(() => {
+        fetch(`{% url "payments:check_status" transaction_id=data.reference %}`)
+          .then(res => res.json())
+          .then(statusData => {
+            if (statusData.status === 'SUCCESSFUL') {
+              showToast('Payment completed', 'success');
+            }
+          });
+      }, 5000);
+    } else {
+      showToast(data.error, 'danger');
+    }
+  })
+  .catch(() => showToast('Error initiating payment', 'danger'));
+});
+</script>
 {% endblock %}

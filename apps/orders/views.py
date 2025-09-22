@@ -1,4 +1,5 @@
 import uuid
+import json
 from django.core.paginator import Paginator
 from decimal import Decimal
 from apps.payments.models import WalletTransaction
@@ -144,7 +145,7 @@ def order_detail(request, order_id):
         return HttpResponseForbidden("Not allowed")
 
     # If AJAX wanted JSON:
-    if request.is_ajax() or request.headers.get("x-requested-with") == "XMLHttpRequest":
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         items = [{
             "name": it.menu_item.name,
             "quantity": it.quantity,

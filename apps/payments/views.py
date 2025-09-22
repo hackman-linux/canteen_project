@@ -1,6 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
+from campay.sdk import Client as CamPayClient
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Payment
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
@@ -41,69 +46,77 @@ def refund_payment(request, transaction_id):
     return JsonResponse({"transaction_id": transaction_id, "status": "refunded"})
 
 
-@login_required
+@csrf_exempt
 def process_payment(request):
-    """Process payment for an order"""
     if request.method == 'POST':
+        data = json.loads(request.body)
+        order = data.get('order_id')  # Assume order ID from POST
+        amount = data.get('amount')
+        phone = data.get('phone')  # User provides phone number
+        
+        if not all([amount, phone]):
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        campay = CamPayClient({
+            "app_username": settings.CAMPAY_CONFIG['APP_USERNAME'],
+            "app_password": settings.CAMPAY_CONFIG['APP_PASSWORD'],
+            "environment": settings.CAMPAY_CONFIG['ENVIRONMENT']
+        })
+        
         try:
-            data = json.loads(request.body)
-            order_id = data.get('order_id')
-            payment_method = data.get('payment_method')
-            phone_number = data.get('phone_number', '')
+            collect = campay.collect({
+                "amount": str(amount),
+                "currency": "XAF",
+                "from": phone,
+                "description": f"Payment for order {order}",
+                "external_reference": f"ORDER-{order}"
+            })
             
-            # Get order
-            order = get_object_or_404(Order, id=order_id, customer=request.user)
+            # Create Payment record
+            payment = Payment.objects.create(
+                user=request.user,
+                order_id=order,
+                amount=amount,
+                payment_method='mtn_momo' if 'MTN' in collect.get('operator', '') else 'orange_money',
+                status='pending',
+                transaction_id=collect.get('reference')
+            )
             
-            if order.status != 'pending':
-                return JsonResponse({'error': 'Order cannot be paid'}, status=400)
-            
-            # Check if payment already exists
-            if order.payments.filter(status__in=['pending', 'completed']).exists():
-                return JsonResponse({'error': 'Payment already processed'}, status=400)
-            
-            with transaction.atomic():
-                # Create payment record
-                payment = Payment.objects.create(
-                    user=request.user,
-                    order=order,
-                    payment_method=payment_method,
-                    amount=order.total_amount,
-                    phone_number=phone_number,
-                    description=f'Payment for order #{order.order_number}'
-                )
-                
-                # Process payment based on method
-                if payment_method == 'wallet':
-                    result = process_wallet_payment(payment)
-                elif payment_method == 'mtn_momo':
-                    result = process_mtn_payment(payment)
-                elif payment_method == 'orange_money':
-                    result = process_orange_payment(payment)
-                else:
-                    return JsonResponse({'error': 'Invalid payment method'}, status=400)
-                
-                if result['success']:
-                    # Update order status
-                    order.update_status('confirmed', request.user)
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'message': result['message'],
-                        'payment_id': str(payment.id),
-                        'transaction_id': result.get('transaction_id', ''),
-                        'redirect_url': result.get('redirect_url', '')
-                    })
-                else:
-                    return JsonResponse({
-                        'error': result['message']
-                    }, status=400)
-                    
+            return JsonResponse({'success': True, 'reference': collect['reference'], 'message': 'Payment initiated'})
         except Exception as e:
-            logger.error(f'Payment processing error: {str(e)}')
-            return JsonResponse({'error': 'Payment processing failed'}, status=500)
+            return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+@csrf_exempt
+def campay_webhook(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        reference = data.get('reference')
+        
+        try:
+            payment = Payment.objects.get(transaction_id=reference)
+            payment.status = data.get('status', 'failed').lower()
+            payment.save()
+            # Notify user or order update
+            return JsonResponse({'success': True})
+        except Payment.DoesNotExist:
+            return JsonResponse({'error': 'Payment not found'}, status=404)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def check_payment_status(request, transaction_id):
+    campay = CamPayClient({
+        "app_username": settings.CAMPAY_CONFIG['APP_USERNAME'],
+        "app_password": settings.CAMPAY_CONFIG['APP_PASSWORD'],
+        "environment": settings.CAMPAY_CONFIG['ENVIRONMENT']
+    })
+    
+    try:
+        status = campay.get_transaction_status({"reference": transaction_id})
+        return JsonResponse({'success': True, 'status': status['status']})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def process_wallet_payment(payment):
     """Process wallet payment"""

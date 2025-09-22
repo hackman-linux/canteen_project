@@ -25,70 +25,24 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def notifications_list(request):
-    """Display user's notifications"""
-    # Get user's notifications
-    notifications = UserNotification.objects.filter(
-        user=request.user
-    ).select_related('notification').order_by('-created_at')
-    
-    # Filter by status
-    status = request.GET.get('status', 'all')
-    if status == 'unread':
-        notifications = notifications.filter(is_read=False)
-    elif status == 'read':
-        notifications = notifications.filter(is_read=True)
-    
-    # Filter by type
-    notification_type = request.GET.get('type', 'all')
-    if notification_type != 'all':
-        notifications = notifications.filter(notification__notification_type=notification_type)
-    
-    # Pagination
+    notifications = Notification.objects.filter(target_user=request.user).order_by('-created_at')
     paginator = Paginator(notifications, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Get counts
-    unread_count = UserNotification.objects.filter(
-        user=request.user, is_read=False
-    ).count()
-    
     context = {
         'page_obj': page_obj,
-        'status': status,
-        'notification_type': notification_type,
-        'unread_count': unread_count,
-        'notification_types': dict(Notification.NOTIFICATION_TYPE_CHOICES)
-
+        'unread_count': notifications.filter(is_read=False).count(),
     }
-    
     return render(request, 'notifications/list.html', context)
 
 
 @login_required
+@login_required
 def mark_notification_read(request, notification_id):
-    """Mark a notification as read"""
-    if request.method == 'POST':
-        try:
-            user_notification = get_object_or_404(
-                UserNotification, 
-                id=notification_id, 
-                user=request.user
-            )
-            
-            user_notification.mark_as_read()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Notification marked as read'
-            })
-            
-        except Exception as e:
-            return JsonResponse({
-                'error': f'Error marking notification as read: {str(e)}'
-            }, status=400)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    notification = get_object_or_404(Notification, id=notification_id, target_user=request.user)
+    notification.is_read = True
+    notification.save()
+    return JsonResponse({'success': True, 'message': 'Marked as read'})
 
 
 @login_required
@@ -119,28 +73,9 @@ def mark_all_read(request):
 
 @login_required
 def delete_notification(request, notification_id):
-    """Delete a notification"""
-    if request.method == 'DELETE':
-        try:
-            user_notification = get_object_or_404(
-                UserNotification, 
-                id=notification_id, 
-                user=request.user
-            )
-            
-            user_notification.delete()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Notification deleted'
-            })
-            
-        except Exception as e:
-            return JsonResponse({
-                'error': f'Error deleting notification: {str(e)}'
-            }, status=400)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    notification = get_object_or_404(Notification, id=notification_id, target_user=request.user)
+    notification.delete()
+    return JsonResponse({'success': True, 'message': 'Deleted'})
 
 
 
